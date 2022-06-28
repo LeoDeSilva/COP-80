@@ -1,0 +1,19 @@
+html, body {
+    padding: none;
+    margin: 0;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: black;
+}
+
+canvas {
+  padding: none;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
