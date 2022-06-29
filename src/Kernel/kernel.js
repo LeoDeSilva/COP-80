@@ -2,6 +2,7 @@ const { MemoryChip } = require("../Chips/MemoryChip");
 const { DisplayChip } = require("../Chips/Display/DisplayChip");
 const { KeyboardChip } = require("../Chips/Input/KeyboardChip");
 const { FontChip } = require("../Chips/Display/FontChip");
+const { ErrorChip } = require("../Chips/ErrorChip");
 
 const { Terminal } = require("./Programs/Terminal/Terminal");
 
@@ -16,6 +17,7 @@ class Kernel {
     this.DisplayChip = new DisplayChip(screenHeight);
     this.KeyboardChip = new KeyboardChip();
     this.FontChip = new FontChip(FONT);
+    this.ErrorChip = new ErrorChip();
 
     this.loadedProgram = new Terminal(this);
     this.loadedProgram.Start();

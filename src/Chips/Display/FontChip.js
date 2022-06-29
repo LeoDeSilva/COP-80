@@ -25,7 +25,20 @@ class FontChip {
         if (inline) xpos = x;
         else xpos = 0;
       }
-
+      if (message[i] == "\n") {
+        if (inline) xpos = x;
+        else xpos = 0;
+        ypos += 6;
+        continue;
+      } else if (message[i] == "\t") {
+        xpos += 4 * 2; // SPACES TO IDENT
+        if (xpos + 4 >= DisplayChip.PIXEL_DENSITY) {
+          // WRAP IF OVER EDGE
+          ypos += 6;
+          if (inline) xpos = x;
+          else xpos = 0;
+        }
+      }
       this.BlitCharacter(DisplayChip, message[i], xpos, ypos, colour_code);
       if (xpos > MAXWIDTH) MAXWIDTH = xpos;
       xpos += 4;

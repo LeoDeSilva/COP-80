@@ -1,20 +1,100 @@
+const { Editor } = require("../Editor/Editor");
+
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const DIGITS = "1234567890";
-const PRINTABLES = "!@£$%^&*()_-=+[]{}\\'\"/?.,><#`" + ALPHABET;
+const PRINTABLES = "!@£$%^&*()_-=+[]{}\\'\"/?.,><#`" + ALPHABET + DIGITS;
+
+function Touch(Terminal) {
+  let cmd = parseCommand(Terminal.inputBuffer);
+  let fileName = cmd.content[0];
+  if (fileName != null) Terminal.Kernel.MemoryChip.CreateFile(fileName);
+}
+
+function ChangeDirectory(Terminal) {
+  let directory = parseCommand(Terminal.inputBuffer).content[0];
+  let err = 0;
+
+  if (directory == null) {
+    err = 1;
+  } else if (directory == "..") {
+    err = Terminal.Kernel.MemoryChip.RegressDirectory();
+  } else {
+    err = Terminal.Kernel.MemoryChip.EnterDirectory(directory);
+  }
+
+  if (err == 1) {
+    Terminal.History.push({
+      type: "string",
+      content: "SYNTAX ERROR",
+      //   content: Terminal.Kernel.ErrorChip.GetError(),
+      colour: 14,
+    });
+    return;
+  }
+
+  Terminal.History.push({
+    type: "string",
+    content: "/" + Terminal.Kernel.MemoryChip.GetFilePath() + "/",
+    colour: 12,
+  });
+}
+
+function MakeDirectory(Terminal) {
+  let cmd = parseCommand(Terminal.inputBuffer);
+  let folderName = cmd.content[0];
+  if (folderName != null)
+    Terminal.Kernel.MemoryChip.CreateDirectory(folderName);
+}
+
+function ListDirectory(Terminal) {
+  for (
+    let i = 0;
+    i < Terminal.Kernel.MemoryChip.CurrentDirectory.Files.length;
+    i++
+  ) {
+    let content = Terminal.Kernel.MemoryChip.CurrentDirectory.Files[i].Name;
+    let colour = 6;
+    if (Terminal.Kernel.MemoryChip.CurrentDirectory.Files[i].Type == "folder")
+      colour = 14;
+    Terminal.History.push({
+      type: "string",
+      content: content,
+      colour: colour,
+    });
+  }
+}
+
+function Edit(Terminal) {
+  let fileName = parseCommand(Terminal.inputBuffer).content[0];
+  let file = Terminal.Kernel.MemoryChip.GetFile(fileName);
+  if (file === undefined) Terminal.Kernel.MemoryChip.CreateFile(fileName);
+  Terminal.Kernel.loadedProgram = new Editor(Terminal.Kernel, fileName);
+  // Terminal.History.push({
+  //   type: "string",
+  //   content: "ERROR: FILE NOT FOUND",
+  //   colour: 14,
+  // });
+}
 
 function Welcome(Terminal) {
   return [
     {
       type: "function",
-      content: (Kernel) => {
-        Kernel.Icons["cop-80-icon"].Blit(Kernel.DisplayChip, 0, 0);
+      content: (Kernel, y) => {
+        // return Kernel.Icons["welcome"].Blit(Kernel.DisplayChip, 0, 0);
+        Kernel.Icons["cop-80-icon"].Blit(Kernel.DisplayChip, 0, y);
         return Kernel.Icons["cop-80"].Blit(
           Kernel.DisplayChip,
           Kernel.Icons["cop-80-icon"].width + 1,
-          0
+          y
         );
       },
       colour: 0,
+    },
+    {
+      type: "string",
+      content: "Fantasy Console",
+      colour: 6,
     },
     {
       type: "string",
@@ -39,6 +119,7 @@ function Colour(Terminal) {
     return {
       type: "string",
       content: "SYNTAX ERROR",
+      //   content: Terminal.Kernel.ErrorChip.GetError(),
       colour: 14,
     };
   }
@@ -74,11 +155,21 @@ function parseCommand(command) {
       case "'":
         let quote = command[i];
         var tempString = "";
-
+        initIndex = i;
+        missingQuote = false;
         i++;
         while (command[i] != quote) {
-          tempString += command[i];
-          i++;
+          if (i >= command.length) {
+            missingQuote = true;
+            break;
+          }
+          if (missingQuote) {
+            tempString += '"';
+            i = initIndex;
+          } else {
+            tempString += command[i];
+            i++;
+          }
         }
 
         parsedCommand.content.push(tempString);
@@ -118,4 +209,9 @@ module.exports = {
   Welcome,
   Echo,
   Colour,
+  Edit,
+  MakeDirectory,
+  ListDirectory,
+  ChangeDirectory,
+  Touch,
 };

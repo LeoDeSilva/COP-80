@@ -14,7 +14,7 @@ class DisplayChip {
     return y * this.PIXEL_DENSITY + x;
   }
 
-  rect(x, y, width, height, colour_code) {
+  Rect(x, y, width, height, colour_code) {
     // ROW (x to x + width)
     for (let ypos = y; ypos <= y + (height - 1); ypos++) {
       for (let xpos = x; xpos <= x + (width - 1); xpos++) {

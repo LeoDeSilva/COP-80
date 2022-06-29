@@ -1,6 +1,15 @@
 const { FONT } = require("../../../Assets/font");
 const { DisplayChip } = require("../../../Chips/Display/DisplayChip");
-const { Welcome, Echo, Colour } = require("./TerminalCommands");
+const {
+  Welcome,
+  Echo,
+  Colour,
+  Edit,
+  MakeDirectory,
+  ListDirectory,
+  Touch,
+  ChangeDirectory,
+} = require("./TerminalCommands");
 
 class Terminal {
   constructor(kernel) {
@@ -25,8 +34,12 @@ class Terminal {
 
   Update() {
     this.Kernel.DisplayChip.FillScreen(0);
-    this.handleInput();
     let [, height] = this.renderHistory(0);
+    if (height + 5 > 128) {
+      this.Kernel.DisplayChip.FillScreen(0);
+      [, height] = this.renderHistory(123 - height);
+    }
+    this.handleInput();
     let [width] = this.Kernel.FontChip.BlitText(
       this.Kernel.DisplayChip,
       "> ",
@@ -53,6 +66,26 @@ class Terminal {
     });
 
     switch (this.inputBuffer.toUpperCase().split(" ")[0]) {
+      case "CD":
+        ChangeDirectory(this);
+        break;
+
+      case "LS":
+        ListDirectory(this);
+        break;
+
+      case "TOUCH":
+        Touch(this);
+        break;
+
+      case "MKDIR":
+        MakeDirectory(this);
+        break;
+
+      case "EDIT":
+        Edit(this);
+        break;
+
       case "CLS":
         this.History = [];
         break;
@@ -74,6 +107,7 @@ class Terminal {
         this.History.push({
           type: "string",
           content: "SYNTAX ERROR",
+          // content: this.Kernel.ErrorChip.GetError(),
           colour: 14,
         });
         break;
@@ -157,7 +191,7 @@ class Terminal {
       this.cursorBlinkTimeout = this.maxCursorBlinkTimout; // RESET BLINK CYCLE
     if (this.cursorBlinkTimeout > this.cursorShowTimout)
       // IF > x THEN SHOW CURSOR
-      this.Kernel.DisplayChip.rect(cursorX, cursorY, 4, 5, 8);
+      this.Kernel.DisplayChip.Rect(cursorX, cursorY, 4, 5, 8);
     this.cursorBlinkTimeout--; // DECREMENT CURSOR CUCLE
   }
 
@@ -168,7 +202,7 @@ class Terminal {
     for (let i = 0; i < this.History.length; i++) {
       switch (this.History[i].type) {
         case "function":
-          [, height] = this.History[i].content(this.Kernel);
+          [, height] = this.History[i].content(this.Kernel, ypos);
           ypos += height + 1;
           break;
 
