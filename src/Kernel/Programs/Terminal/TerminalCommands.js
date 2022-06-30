@@ -7,7 +7,7 @@ const PRINTABLES = "!@£$%^&*()_-=+[]{}\\'\"/?.,><#`" + ALPHABET + DIGITS;
 function Touch(Terminal) {
   let cmd = parseCommand(Terminal.inputBuffer);
   let fileName = cmd.content[0];
-  if (fileName != null) Terminal.Kernel.MemoryChip.CreateFile(fileName);
+  if (fileName != null) Terminal.Kernel.MemoryChip.CreateFile(fileName, "");
 }
 
 function ChangeDirectory(Terminal) {
@@ -66,14 +66,17 @@ function ListDirectory(Terminal) {
 
 function Edit(Terminal) {
   let fileName = parseCommand(Terminal.inputBuffer).content[0];
+  if (fileName == "" || fileName == undefined) {
+    Terminal.History.push({
+      type: "string",
+      content: "ERROR: FILE NOT FOUND",
+      colour: 14,
+    });
+    return;
+  }
   let file = Terminal.Kernel.MemoryChip.GetFile(fileName);
-  if (file === undefined) Terminal.Kernel.MemoryChip.CreateFile(fileName);
+  if (file === undefined) Terminal.Kernel.MemoryChip.CreateFile(fileName, "");
   Terminal.Kernel.loadedProgram = new Editor(Terminal.Kernel, fileName);
-  // Terminal.History.push({
-  //   type: "string",
-  //   content: "ERROR: FILE NOT FOUND",
-  //   colour: 14,
-  // });
 }
 
 function Welcome(Terminal) {
