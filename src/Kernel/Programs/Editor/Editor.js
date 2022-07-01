@@ -4,6 +4,7 @@ class Editor {
     this.fileName = fileName;
     this.fileData = Kernel.MemoryChip.GetFile(this.fileName).FileData;
     this.cursorIndex = 0;
+    this.drawStart = 9 + 3;
 
     this.maxCursorBlinkTimout = 16;
     this.cursorShowTimout = 10;
@@ -19,6 +20,24 @@ class Editor {
 
   Update() {
     this.Kernel.DisplayChip.FillScreen(0);
+    this.handleInput();
+
+    let [, cursorY] = this.getCursorXY(3, this.drawStart);
+    // if (cursorY <= 0) this.drawStart = 128 - cursorY;
+    if (cursorY + 6 > 128) this.drawStart -= 6;
+    if (cursorY < 9 + 3) this.drawStart += 6;
+    console.log(cursorY, this.drawStart);
+
+    this.Kernel.FontChip.BlitTextWrap(
+      this.Kernel.DisplayChip,
+      this.fileData,
+      3,
+      this.drawStart,
+      7,
+      true
+    );
+
+    this.drawCursor(3, this.drawStart);
     this.Kernel.DisplayChip.Rect(0, 0, 128, 9, 7);
     this.Kernel.FontChip.BlitText(
       this.Kernel.DisplayChip,
@@ -27,23 +46,18 @@ class Editor {
       2,
       0
     );
-
-    this.handleInput();
-
-    this.Kernel.FontChip.BlitTextWrap(
-      this.Kernel.DisplayChip,
-      this.fileData,
-      3,
-      9 + 3,
-      7,
-      true
-    );
-
-    this.drawCursor(3, 9 + 3);
   }
 
   handleKeyPress(key) {
     switch (key.toUpperCase()) {
+      case "ARROWUP":
+        this.cursorUp();
+        break;
+
+      case "ARROWDOWN":
+        this.cursorDown();
+        break;
+
       case "ARROWRIGHT":
         if (this.cursorIndex < this.fileData.length) this.cursorIndex++;
         break;
@@ -73,6 +87,86 @@ class Editor {
         }
         break;
     }
+  }
+
+  getCursorXY(x, y) {
+    let cursorX = x;
+    let cursorY = y;
+    for (let i = 0; i < this.cursorIndex; i++) {
+      cursorX += 4; // SIUMULATE DRAWING CHARS UP TO CURSOR INDEX WITHOUT ACTUALLY DRAWING TO GET CURSOR POSITION
+
+      if (this.fileData[i] == "\n") {
+        cursorX = x;
+        cursorY += 6;
+      } else if (this.fileData[i] == "\t") {
+        cursorX += 4 * 2;
+      }
+
+      if (
+        cursorX + 3 /* WIDTH OF CURSOR*/ >=
+        this.Kernel.DisplayChip.PIXEL_DENSITY
+      ) {
+        cursorX = x;
+        cursorY += 6;
+      }
+    }
+    return [cursorX, cursorY];
+  }
+
+  getIndexFromPosition(x, y, targetX, targetY) {
+    let cursorX = 3;
+    let cursorY = 9 + 3;
+    for (let i = 0; i < this.fileData.length; i++) {
+      cursorX += 4; // SIUMULATE DRAWING CHARS UP TO CURSOR INDEX WITHOUT ACTUALLY DRAWING TO GET CURSOR POSITION
+
+      if (this.fileData[i] == "\n") {
+        if (cursorY == targetY) return i;
+        cursorX = x;
+        cursorY += 6;
+      } else if (this.fileData[i] == "\t") {
+        cursorX += 4 * 2;
+      }
+
+      if (
+        cursorX + 3 /* WIDTH OF CURSOR*/ >=
+        this.Kernel.DisplayChip.PIXEL_DENSITY
+      ) {
+        if (cursorY == targetY) return i;
+        cursorX = x;
+        cursorY += 6;
+      }
+
+      if (cursorY == targetY && cursorX == targetX) {
+        return i;
+      } else if (cursorY == targetY && i == this.fileData.length - 1) {
+        return i;
+      }
+    }
+
+    return this.cursorIndex;
+  }
+
+  cursorUp() {
+    let [currentX, currentY] = this.getCursorXY(3, 9 + 3);
+    this.cursorIndex = this.getIndexFromPosition(
+      3,
+      9 + 3,
+      currentX + 4,
+      currentY - 6
+    );
+  }
+
+  cursorDown() {
+    let [currentX, currentY] = this.getCursorXY(3, 9 + 3);
+    this.cursorIndex = this.getIndexFromPosition(
+      3,
+      9 + 3,
+      currentX + 4,
+      currentY + 6
+    );
+
+    // let [, newY] = this.getCursorXY(3, this.drawStart);
+    // if (newY + 6 >= 128) this.drawStart += 6;
   }
 
   insertKey(key) {
@@ -107,27 +201,7 @@ class Editor {
   }
 
   drawCursor(x, y) {
-    let cursorX = x;
-    let cursorY = y;
-
-    for (let i = 0; i < this.cursorIndex; i++) {
-      cursorX += 4; // SIUMULATE DRAWING CHARS UP TO CURSOR INDEX WITHOUT ACTUALLY DRAWING TO GET CURSOR POSITION
-
-      if (this.fileData[i] == "\n") {
-        cursorX = x;
-        cursorY += 6;
-      } else if (this.fileData[i] == "\t") {
-        cursorX += 4 * 2;
-      }
-
-      if (
-        cursorX + 3 /* WIDTH OF CURSOR*/ >=
-        this.Kernel.DisplayChip.PIXEL_DENSITY
-      ) {
-        cursorX = x;
-        cursorY += 6;
-      }
-    }
+    let [cursorX, cursorY] = this.getCursorXY(x, y);
 
     if (this.cursorBlinkTimeout == 0)
       this.cursorBlinkTimeout = this.maxCursorBlinkTimout; // RESET BLINK CYCLE
