@@ -38,12 +38,24 @@ class Editor {
     );
 
     this.drawCursor(3, this.drawStart);
-    this.Kernel.DisplayChip.Rect(0, 0, 128, 9, 7);
+
+    this.Kernel.DisplayChip.Rect(2, 2, 124, 7, 7); // TITLE BAR
+    // this.Kernel.DisplayChip.setPixel(125, 2, 5);
+    // this.Kernel.DisplayChip.setPixel(125, 8, 5);
+    // this.Kernel.DisplayChip.setPixel(2, 2, 5);
+    // this.Kernel.DisplayChip.setPixel(2, 8, 5);
+
+    this.Kernel.DisplayChip.Rect(0, 1, 128, 1, 0);
+    this.Kernel.DisplayChip.Rect(0, 127, 128, 1, 7); // BORDER OF IMAGE
+    this.Kernel.DisplayChip.Rect(0, 0, 128, 1, 7);
+    this.Kernel.DisplayChip.Rect(0, 0, 1, 128, 7);
+    this.Kernel.DisplayChip.Rect(127, 0, 1, 128, 7);
+
     this.Kernel.FontChip.BlitText(
       this.Kernel.DisplayChip,
       this.fileName,
-      2,
-      2,
+      3,
+      3,
       0
     );
   }
