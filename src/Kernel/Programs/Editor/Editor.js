@@ -1,10 +1,14 @@
 class Editor {
-  constructor(Kernel, fileName) {
+  constructor(Kernel, fileName, previousProgram) {
     this.Kernel = Kernel;
+    this.previousProgram = previousProgram;
+
     this.fileName = fileName;
     this.fileData = Kernel.MemoryChip.GetFile(this.fileName).FileData;
     this.cursorIndex = 0;
-    this.drawStart = 9 + 3;
+
+    this.drawStartY = 9 + 3;
+    this.drawStartX = 3;
 
     this.maxCursorBlinkTimout = 16;
     this.cursorShowTimout = 10;
@@ -22,22 +26,24 @@ class Editor {
     this.Kernel.DisplayChip.FillScreen(0);
     this.handleInput();
 
-    let [, cursorY] = this.getCursorXY(3, this.drawStart);
-    // if (cursorY <= 0) this.drawStart = 128 - cursorY;
-    if (cursorY + 6 > 128) this.drawStart -= 6;
-    if (cursorY < 9 + 3) this.drawStart += 6;
-    console.log(cursorY, this.drawStart);
+    let [cursorX, cursorY] = this.getCursorXY(this.drawStartX, this.drawStartY);
+    // if (cursorY <= 0) this.drawStartY = 128 - cursorY;
+    if (cursorY + 6 > 128) this.drawStartY -= 6;
+    if (cursorY < 9 + 3) this.drawStartY += 6;
+    if (cursorX < 3) this.drawStartX += 4;
+    if (cursorX + 4 > 128) this.drawStartX -= 4;
+    console.log(this.drawStartX);
 
-    this.Kernel.FontChip.BlitTextWrap(
+    this.Kernel.FontChip.BlitText(
       this.Kernel.DisplayChip,
       this.fileData,
-      3,
-      this.drawStart,
+      this.drawStartX,
+      this.drawStartY,
       7,
       true
     );
 
-    this.drawCursor(3, this.drawStart);
+    this.drawCursor(this.drawStartX, this.drawStartY);
 
     this.Kernel.DisplayChip.Rect(2, 2, 124, 7, 7); // TITLE BAR
     // this.Kernel.DisplayChip.setPixel(125, 2, 5);
@@ -60,8 +66,20 @@ class Editor {
     );
   }
 
+  Save() {
+    let file = this.Kernel.MemoryChip.GetFile(this.fileName);
+    let fileIndex = this.Kernel.MemoryChip.CurrentDirectory.Files.indexOf(file);
+    this.Kernel.MemoryChip.CurrentDirectory.Files[fileIndex].FileData =
+      this.fileData;
+  }
+
   handleKeyPress(key) {
     switch (key.toUpperCase()) {
+      case "ESCAPE":
+        this.Save();
+        this.Kernel.Load(this.previousProgram);
+        break;
+
       case "ARROWUP":
         this.cursorUp();
         break;
@@ -113,15 +131,16 @@ class Editor {
       } else if (this.fileData[i] == "\t") {
         cursorX += 4 * 2;
       }
-
-      if (
-        cursorX + 3 /* WIDTH OF CURSOR*/ >=
-        this.Kernel.DisplayChip.PIXEL_DENSITY
-      ) {
-        cursorX = x;
-        cursorY += 6;
-      }
     }
+
+    //   if (
+    //     cursorX + 3 /* WIDTH OF CURSOR*/ >=
+    //     this.Kernel.DisplayChip.PIXEL_DENSITY
+    //   ) {
+    //     cursorX = x;
+    //     cursorY += 6;
+    //   }
+    // }
     return [cursorX, cursorY];
   }
 
@@ -139,21 +158,20 @@ class Editor {
         cursorX += 4 * 2;
       }
 
-      if (
-        cursorX + 3 /* WIDTH OF CURSOR*/ >=
-        this.Kernel.DisplayChip.PIXEL_DENSITY
-      ) {
-        if (cursorY == targetY) return i;
-        cursorX = x;
-        cursorY += 6;
-      }
-
       if (cursorY == targetY && cursorX == targetX) {
         return i;
       } else if (cursorY == targetY && i == this.fileData.length - 1) {
         return i;
       }
     }
+    // if (
+    //   cursorX + 3 /* WIDTH OF CURSOR*/ >=
+    //   this.Kernel.DisplayChip.PIXEL_DENSITY
+    // ) {
+    //   if (cursorY == targetY) return i;
+    //   cursorX = x;
+    //   cursorY += 6;
+    // }
 
     return this.cursorIndex;
   }
@@ -177,8 +195,8 @@ class Editor {
       currentY + 6
     );
 
-    // let [, newY] = this.getCursorXY(3, this.drawStart);
-    // if (newY + 6 >= 128) this.drawStart += 6;
+    // let [, newY] = this.getCursorXY(3, this.drawStartY);
+    // if (newY + 6 >= 128) this.drawStartY += 6;
   }
 
   insertKey(key) {

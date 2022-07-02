@@ -57,13 +57,14 @@ class MemoryChip {
   }
 
   CreateDirectory(folderName) {
-    if (this.GetDirectory(folderName) != undefined) return;
+    if (this.GetDirectory(folderName) != undefined) return true;
     this.CurrentDirectory.Files.push(
       new Folder(folderName, this.CurrentDirectory)
     );
   }
 
   CreateFile(fileName, fileData) {
+    if (this.GetFile(fileName) != undefined) return true;
     this.CurrentDirectory.Files.push(new File(fileName, fileData));
   }
 }

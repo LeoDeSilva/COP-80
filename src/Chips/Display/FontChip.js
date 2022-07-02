@@ -7,8 +7,15 @@ class FontChip {
 
   BlitText(DisplayChip, message, x, y, colour_code) {
     let xpos = x;
+    let ypos = y;
     for (let i = 0; i < message.length; i++) {
-      this.BlitCharacter(DisplayChip, message[i], xpos, y, colour_code);
+      if (message[i] == "\n") {
+        ypos += 6;
+        xpos = x - 4;
+      } else if (message[i] == "\t") {
+        xpos += 4 * 2; // SPACES TO IDENT
+      }
+      this.BlitCharacter(DisplayChip, message[i], xpos, ypos, colour_code);
       xpos += 4;
     }
     return [xpos - x, 5];

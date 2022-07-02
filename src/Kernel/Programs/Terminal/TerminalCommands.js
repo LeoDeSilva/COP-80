@@ -7,7 +7,16 @@ const PRINTABLES = "!@£$%^&*()_-=+[]{}\\'\"/?.,><#`" + ALPHABET + DIGITS;
 function Touch(Terminal) {
   let cmd = parseCommand(Terminal.inputBuffer);
   let fileName = cmd.content[0];
-  if (fileName != null) Terminal.Kernel.MemoryChip.CreateFile(fileName, "");
+  if (fileName != null) {
+    let err = Terminal.Kernel.MemoryChip.CreateFile(fileName, "");
+    if (err) {
+      Terminal.History.push({
+        type: "string",
+        content: "ERROR: FILE ALREADY EXISTS",
+        colour: 14,
+      });
+    }
+  }
 }
 
 function ChangeDirectory(Terminal) {
@@ -42,8 +51,16 @@ function ChangeDirectory(Terminal) {
 function MakeDirectory(Terminal) {
   let cmd = parseCommand(Terminal.inputBuffer);
   let folderName = cmd.content[0];
-  if (folderName != null)
-    Terminal.Kernel.MemoryChip.CreateDirectory(folderName);
+  if (folderName != null) {
+    let err = Terminal.Kernel.MemoryChip.CreateDirectory(folderName);
+    if (err) {
+      Terminal.History.push({
+        type: "string",
+        content: "ERROR: FILE ALREADY EXISTS",
+        colour: 14,
+      });
+    }
+  }
 }
 
 function ListDirectory(Terminal) {
@@ -76,7 +93,7 @@ function Edit(Terminal) {
   }
   let file = Terminal.Kernel.MemoryChip.GetFile(fileName);
   if (file === undefined) Terminal.Kernel.MemoryChip.CreateFile(fileName, "");
-  Terminal.Kernel.loadedProgram = new Editor(Terminal.Kernel, fileName);
+  Terminal.Kernel.Load(new Editor(Terminal.Kernel, fileName, Terminal));
 }
 
 function Welcome(Terminal) {

@@ -27,6 +27,11 @@ class Kernel {
     this.loadedProgram.Update();
     this.DisplayChip.Draw();
   }
+
+  Load(program) {
+    this.loadedProgram = program;
+    this.loadedProgram.Start();
+  }
 }
 
 module.exports = {

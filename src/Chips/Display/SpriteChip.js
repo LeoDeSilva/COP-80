@@ -12,7 +12,8 @@ class SpriteChip {
       if (this.pixelData[i] != -1) {
         if (xpos >= DisplayChip.PIXEL_DENSITY) {
         }
-        DisplayChip.setPixel(xpos, ypos, this.pixelData[i]);
+        if (!(xpos < 0 || xpos > 128 || xpos > 128 || ypos < 0))
+          DisplayChip.setPixel(xpos, ypos, this.pixelData[i]);
       }
 
       xpos++;
