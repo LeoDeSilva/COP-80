@@ -18,12 +18,15 @@ class Editor {
     this.isHeld = false;
     this.maxHeldTimout = 20;
     this.isHeldTimeout = this.maxHeldTimout;
+
+    this.backgroundColour = 0;
+    this.foregroundColour = 7;
   }
 
   Start() {}
 
   Update() {
-    this.Kernel.DisplayChip.FillScreen(0);
+    this.Kernel.DisplayChip.FillScreen(this.backgroundColour);
     this.handleInput();
 
     let [cursorX, cursorY] = this.getCursorXY(this.drawStartX, this.drawStartY);
@@ -39,30 +42,31 @@ class Editor {
       this.fileData,
       this.drawStartX,
       this.drawStartY,
-      7,
+      this.foregroundColour,
       true
     );
 
     this.drawCursor(this.drawStartX, this.drawStartY);
 
-    this.Kernel.DisplayChip.Rect(2, 2, 124, 7, 7); // TITLE BAR
+    this.Kernel.DisplayChip.Rect(2, 2, 124, 7, this.foregroundColour); // TITLE BAR
     // this.Kernel.DisplayChip.setPixel(125, 2, 5);
     // this.Kernel.DisplayChip.setPixel(125, 8, 5);
     // this.Kernel.DisplayChip.setPixel(2, 2, 5);
     // this.Kernel.DisplayChip.setPixel(2, 8, 5);
 
-    this.Kernel.DisplayChip.Rect(0, 1, 128, 1, 0);
-    this.Kernel.DisplayChip.Rect(0, 127, 128, 1, 7); // BORDER OF IMAGE
-    this.Kernel.DisplayChip.Rect(0, 0, 128, 1, 7);
-    this.Kernel.DisplayChip.Rect(0, 0, 1, 128, 7);
-    this.Kernel.DisplayChip.Rect(127, 0, 1, 128, 7);
+    this.Kernel.DisplayChip.Rect(0, 1, 128, 1, this.backgroundColour);
+
+    this.Kernel.DisplayChip.Rect(0, 127, 128, 1, this.foregroundColour); // BORDER OF IMAGE
+    this.Kernel.DisplayChip.Rect(0, 0, 128, 1, this.foregroundColour);
+    this.Kernel.DisplayChip.Rect(0, 0, 1, 128, this.foregroundColour);
+    this.Kernel.DisplayChip.Rect(127, 0, 1, 128, this.foregroundColour);
 
     this.Kernel.FontChip.BlitText(
       this.Kernel.DisplayChip,
       this.fileName,
       3,
       3,
-      0
+      this.backgroundColour
     );
   }
 

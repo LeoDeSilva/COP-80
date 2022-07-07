@@ -20,6 +20,10 @@ class KeyboardChip {
   handleKey() {
     this.keyBuffer.pop();
   }
+
+  clean() {
+    this.keyBuffer = [];
+  }
 }
 
 module.exports = {

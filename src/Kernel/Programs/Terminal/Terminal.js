@@ -9,6 +9,7 @@ const {
   ListDirectory,
   Touch,
   ChangeDirectory,
+  Run,
 } = require("./TerminalCommands");
 
 class Terminal {
@@ -26,6 +27,9 @@ class Terminal {
     this.isHeld = false;
     this.maxHeldTimout = 20;
     this.isHeldTimeout = this.maxHeldTimout;
+
+    this.startTimeout = 40;
+    this.startChance = 1;
   }
 
   Start() {
@@ -56,6 +60,15 @@ class Terminal {
       true
     );
     this.drawCursor(width, height);
+
+    if (this.startTimeout > 0) {
+      for (let i = 0; i < this.Kernel.DisplayChip.RESOLUTION; i += 2) {
+        if (Math.random() < this.startChance)
+          this.Kernel.DisplayChip.pixelData[i] = Math.floor(Math.random() * 16);
+      }
+      this.startTimeout--;
+      this.startChance -= 1 / this.startTimeout;
+    }
   }
 
   Execute() {
@@ -66,6 +79,10 @@ class Terminal {
     });
 
     switch (this.inputBuffer.toUpperCase().split(" ")[0]) {
+      case "RUN":
+        Run(this);
+        break;
+
       case "CD":
         ChangeDirectory(this);
         break;

@@ -1,8 +1,35 @@
 const { Editor } = require("../Editor/Editor");
+const { Interpreter } = require("../Interpreter/interpreter");
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const DIGITS = "1234567890";
 const PRINTABLES = "!@£$%^&*()_-=+[]{}\\'\"/?.,><#`" + ALPHABET + DIGITS;
+
+function Run(Terminal) {
+  let cmd = parseCommand(Terminal.inputBuffer);
+  let fileName = cmd.content[0];
+  if (fileName == "" || fileName == undefined) {
+    Terminal.History.push({
+      type: "string",
+      content: "ERROR: FILE NOT FOUND",
+      colour: 14,
+    });
+    return;
+  }
+  let file = Terminal.Kernel.MemoryChip.GetFile(fileName);
+  if (file === undefined) {
+    Terminal.History.push({
+      type: "string",
+      content: "ERROR: FILE NOT FOUND",
+      colour: 14,
+    });
+    return;
+  }
+
+  Terminal.Kernel.Load(
+    new Interpreter(Terminal.Kernel, file.FileData, Terminal)
+  );
+}
 
 function Touch(Terminal) {
   let cmd = parseCommand(Terminal.inputBuffer);
@@ -234,4 +261,5 @@ module.exports = {
   ListDirectory,
   ChangeDirectory,
   Touch,
+  Run,
 };

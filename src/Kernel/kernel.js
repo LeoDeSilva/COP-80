@@ -17,7 +17,6 @@ class Kernel {
     this.DisplayChip = new DisplayChip(screenHeight);
     this.KeyboardChip = new KeyboardChip();
     this.FontChip = new FontChip(FONT);
-    this.ErrorChip = new ErrorChip();
 
     this.loadedProgram = new Terminal(this);
     this.loadedProgram.Start();
