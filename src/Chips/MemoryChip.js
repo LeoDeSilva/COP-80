@@ -19,6 +19,7 @@ class MemoryChip {
   constructor() {
     this.BaseDirectory = new Folder("BASE");
     this.BaseDirectory.Parent = this.BaseDirectory;
+
     this.CurrentDirectory = this.BaseDirectory;
     this.FilePath = [this.BaseDirectory];
   }
@@ -51,6 +52,7 @@ class MemoryChip {
   RegressDirectory() {
     let parentDir = this.CurrentDirectory.Parent;
     if (parentDir === undefined) return 1;
+
     this.CurrentDirectory = parentDir;
     if (this.FilePath.length > 1) this.FilePath.pop();
     return 0;

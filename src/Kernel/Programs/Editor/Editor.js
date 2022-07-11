@@ -1,7 +1,6 @@
 class Editor {
-  constructor(Kernel, fileName, previousProgram) {
+  constructor(Kernel, fileName) {
     this.Kernel = Kernel;
-    this.previousProgram = previousProgram;
 
     this.fileName = fileName;
     this.fileData = Kernel.MemoryChip.GetFile(this.fileName).FileData;
@@ -26,17 +25,21 @@ class Editor {
   Start() {}
 
   Update() {
+    if (this.Kernel.loadedProgram != this) return;
     this.Kernel.DisplayChip.FillScreen(this.backgroundColour);
     this.handleInput();
 
     let [cursorX, cursorY] = this.getCursorXY(this.drawStartX, this.drawStartY);
-    // if (cursorY <= 0) this.drawStartY = 128 - cursorY;
-    if (cursorY + 6 > 128) this.drawStartY -= 6;
-    if (cursorY < 9 + 3) this.drawStartY += 6;
-    if (cursorX < 3) this.drawStartX += 4;
-    if (cursorX + 4 > 128) this.drawStartX -= 4;
+
+    // INSTEAD OF SCROLLING, MODIFY POS (TO start rendering text) (hence appears off screen - illusion of scroll)
+    if (cursorY + 6 > 128) this.drawStartY -= 6; // IF AT BOTTOM Of SCREEN (start rendering text heigher)
+    if (cursorY < 9 + 3) this.drawStartY += 6; // IF AT TOP (BELOW TITLE BAR)
+
+    if (cursorX < 3) this.drawStartX += 4; // LEFT OF SCREEN
+    if (cursorX + 4 > 128) this.drawStartX -= 4; // RIGHT OF SCREEN
     console.log(this.drawStartX);
 
+    // DISPLAY FILE TEXT
     this.Kernel.FontChip.BlitText(
       this.Kernel.DisplayChip,
       this.fileData,
@@ -48,15 +51,13 @@ class Editor {
 
     this.drawCursor(this.drawStartX, this.drawStartY);
 
-    this.Kernel.DisplayChip.Rect(2, 2, 124, 7, this.foregroundColour); // TITLE BAR
-    // this.Kernel.DisplayChip.setPixel(125, 2, 5);
-    // this.Kernel.DisplayChip.setPixel(125, 8, 5);
-    // this.Kernel.DisplayChip.setPixel(2, 2, 5);
-    // this.Kernel.DisplayChip.setPixel(2, 8, 5);
+    // TITLE BAR
+    this.Kernel.DisplayChip.Rect(2, 2, 124, 7, this.foregroundColour);
 
     this.Kernel.DisplayChip.Rect(0, 1, 128, 1, this.backgroundColour);
 
-    this.Kernel.DisplayChip.Rect(0, 127, 128, 1, this.foregroundColour); // BORDER OF IMAGE
+    // SCREEN BORDER - RENDERED ON TOP OF TEXT (HENCE BELOW)
+    this.Kernel.DisplayChip.Rect(0, 127, 128, 1, this.foregroundColour);
     this.Kernel.DisplayChip.Rect(0, 0, 128, 1, this.foregroundColour);
     this.Kernel.DisplayChip.Rect(0, 0, 1, 128, this.foregroundColour);
     this.Kernel.DisplayChip.Rect(127, 0, 1, 128, this.foregroundColour);
@@ -81,7 +82,7 @@ class Editor {
     switch (key.toUpperCase()) {
       case "ESCAPE":
         this.Save();
-        this.Kernel.Load(this.previousProgram);
+        this.Kernel.Resume(this.Kernel.lastProgram);
         break;
 
       case "ARROWUP":
@@ -101,6 +102,7 @@ class Editor {
         break;
 
       case "BACKSPACE":
+        // REMOVE CHAR AT CURSOR_INDEX
         this.fileData =
           this.fileData.substring(0, this.cursorIndex - 1) +
           this.fileData.substring(this.cursorIndex); // ADD CHARACTER TO CURSOR INDEX
@@ -116,6 +118,7 @@ class Editor {
         break;
 
       default:
+        // IF A FONT CHAR EXISTS
         if (this.Kernel.FontChip.FONT[key] != null) {
           this.insertKey(key.toUpperCase());
         }
@@ -126,8 +129,10 @@ class Editor {
   getCursorXY(x, y) {
     let cursorX = x;
     let cursorY = y;
+
+    // SIMULATE DRAWING CHARS UP TO CURSOR_INDEX TO GET X_Y POS
     for (let i = 0; i < this.cursorIndex; i++) {
-      cursorX += 4; // SIUMULATE DRAWING CHARS UP TO CURSOR INDEX WITHOUT ACTUALLY DRAWING TO GET CURSOR POSITION
+      cursorX += 4;
 
       if (this.fileData[i] == "\n") {
         cursorX = x;
@@ -137,51 +142,39 @@ class Editor {
       }
     }
 
-    //   if (
-    //     cursorX + 3 /* WIDTH OF CURSOR*/ >=
-    //     this.Kernel.DisplayChip.PIXEL_DENSITY
-    //   ) {
-    //     cursorX = x;
-    //     cursorY += 6;
-    //   }
-    // }
     return [cursorX, cursorY];
   }
 
+  // SIMULATE DRAWING CHARS UP TO CURSOR_INDEX TO GET X_Y POS
   getIndexFromPosition(x, y, targetX, targetY) {
     let cursorX = 3;
-    let cursorY = 9 + 3;
+    let cursorY = 9 + 3; // REPRESENT INDENTATION (WILL PRODUCE ERROR IF INTENTATION CHANGED)
     for (let i = 0; i < this.fileData.length; i++) {
-      cursorX += 4; // SIUMULATE DRAWING CHARS UP TO CURSOR INDEX WITHOUT ACTUALLY DRAWING TO GET CURSOR POSITION
+      cursorX += 4;
 
       if (this.fileData[i] == "\n") {
-        if (cursorY == targetY) return i;
+        if (cursorY == targetY) return i; // IF END OF CORRCT LINE (RETURN POS) : LINE SHORTER THAN PREVIOUS
         cursorX = x;
         cursorY += 6;
       } else if (this.fileData[i] == "\t") {
-        cursorX += 4 * 2;
+        cursorX += 4 * 2; // 2 SPACES INDENTATION
       }
 
       if (cursorY == targetY && cursorX == targetX) {
+        // IF CORRECT CHAR POSITION (EXACTLY)
         return i;
       } else if (cursorY == targetY && i == this.fileData.length - 1) {
+        // IF END OF FILE IS RIGHT Y AND LINE TOO SHORT (END OF LINE)
         return i;
       }
     }
-    // if (
-    //   cursorX + 3 /* WIDTH OF CURSOR*/ >=
-    //   this.Kernel.DisplayChip.PIXEL_DENSITY
-    // ) {
-    //   if (cursorY == targetY) return i;
-    //   cursorX = x;
-    //   cursorY += 6;
-    // }
 
     return this.cursorIndex;
   }
 
   cursorUp() {
     let [currentX, currentY] = this.getCursorXY(3, 9 + 3);
+    // PRODUCE INDEX OF CURSOR POSITION AT GIVEN X and Y
     this.cursorIndex = this.getIndexFromPosition(
       3,
       9 + 3,
@@ -198,12 +191,10 @@ class Editor {
       currentX + 4,
       currentY + 6
     );
-
-    // let [, newY] = this.getCursorXY(3, this.drawStartY);
-    // if (newY + 6 >= 128) this.drawStartY += 6;
   }
 
   insertKey(key) {
+    // INSERT CHAR AT INDEX OF CURSOR_INDEX
     this.fileData =
       this.fileData.substring(0, this.cursorIndex) +
       key +

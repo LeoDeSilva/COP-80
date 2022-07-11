@@ -10,21 +10,25 @@ const {
   Touch,
   ChangeDirectory,
   Run,
+  Cat,
 } = require("./TerminalCommands");
 
 class Terminal {
   constructor(kernel) {
     this.Kernel = kernel;
     this.History = [];
+    // STORE CURRENT INPUT
     this.inputBuffer = "";
     this.cursorIndex = 0;
 
+    // FRAMES FOR EACH CURSOR CYCLE
     this.maxCursorBlinkTimout = 16;
     this.cursorShowTimout = 10;
     this.cursorBlinkTimeout = this.maxCursorBlinkTimout;
 
     this.prevKey == null;
     this.isHeld = false;
+    // FRAMES HOLDING DOWN KEY TO BE CONSIDERED HELD
     this.maxHeldTimout = 20;
     this.isHeldTimeout = this.maxHeldTimout;
 
@@ -38,12 +42,20 @@ class Terminal {
 
   Update() {
     this.Kernel.DisplayChip.FillScreen(0);
+
     let [, height] = this.renderHistory(0);
+    // if command history fills screen redraw higher (illusion of scrolling)
     if (height + 5 > 128) {
       this.Kernel.DisplayChip.FillScreen(0);
       [, height] = this.renderHistory(123 - height);
     }
+
     this.handleInput();
+
+    // NO IDEA WHY THE UNGODLY FUCK THIS WORKS, IF I PUT IT AT THE TOP OF THE FUNCTION IT LITERALLY BREAKS.
+    // DO NOT TOUCH!!!
+    if (this.Kernel.loadedProgram != this) return;
+
     let [width] = this.Kernel.FontChip.BlitText(
       this.Kernel.DisplayChip,
       "> ",
@@ -51,6 +63,8 @@ class Terminal {
       height,
       7
     );
+
+    // DRWA TEXT INDENTED BY "> "
     this.Kernel.FontChip.BlitTextWrap(
       this.Kernel.DisplayChip,
       this.inputBuffer,
@@ -59,24 +73,34 @@ class Terminal {
       7,
       true
     );
+
     this.drawCursor(width, height);
 
+    // STATIC WHEN LOADING UP ( IN FIRST x FRAMES )
     if (this.startTimeout > 0) {
       for (let i = 0; i < this.Kernel.DisplayChip.RESOLUTION; i += 2) {
+        // IF WITHIN CHANCE THEN DRWA PIXEL WITH RANDOM COLOUR AT EVERY OTHER INDEX ( banding effect )
         if (Math.random() < this.startChance)
           this.Kernel.DisplayChip.pixelData[i] = Math.floor(Math.random() * 16);
       }
+
       this.startTimeout--;
+      // REDUCE CHANCE OF PIXEL TO 0 BY x FRAMES
       this.startChance -= 1 / this.startTimeout;
     }
   }
 
-  Execute() {
+  appendHistory(type, content, colourCode) {
     this.History.push({
-      type: "string",
-      content: "> " + this.inputBuffer,
-      colour: 7,
+      type: type,
+      content: content,
+      colour: colourCode,
     });
+  }
+
+  Execute() {
+    //TODO: INCLUDE INDENTATION IN STRING (FOR MULTILINE COMMANDS)
+    this.appendHistory("string", "> " + this.inputBuffer, 7);
 
     switch (this.inputBuffer.toUpperCase().split(" ")[0]) {
       case "RUN":
@@ -112,21 +136,20 @@ class Terminal {
         break;
 
       case "ECHO":
-        this.History.push(Echo(this));
+        Echo(this);
+        break;
+
+      case "CAT":
+        Cat(this);
         break;
 
       case "COLOUR":
       case "COLOR":
-        this.History.push(Colour(this));
+        Colour(this);
         break;
 
       default:
-        this.History.push({
-          type: "string",
-          content: "SYNTAX ERROR",
-          // content: this.Kernel.ErrorChip.GetError(),
-          colour: 14,
-        });
+        this.appendHistory("string", "SYNTAX ERROR", 14);
         break;
     }
     this.inputBuffer = "";
@@ -199,7 +222,7 @@ class Terminal {
         cursorX + 3 /* WIDTH OF CURSOR*/ >=
         this.Kernel.DisplayChip.PIXEL_DENSITY
       ) {
-        cursorX = x;
+        cursorX = x + 4;
         cursorY += 6;
       }
     }

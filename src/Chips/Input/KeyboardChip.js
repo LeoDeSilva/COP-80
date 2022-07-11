@@ -1,5 +1,6 @@
 class KeyboardChip {
   constructor() {
+    // LIST OF ALL KEYS WAITING TO BE HANDLED (compensate for speed difference)
     this.keyBuffer = [];
     this.pressedKeys = {};
 

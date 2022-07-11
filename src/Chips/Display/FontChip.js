@@ -5,6 +5,7 @@ class FontChip {
     this.FONT = font;
   }
 
+  // DRAW TEXT (DOES NOT WRAP IF OFF SCREEN)
   BlitText(DisplayChip, message, x, y, colour_code) {
     let xpos = x;
     let ypos = y;
@@ -21,6 +22,7 @@ class FontChip {
     return [xpos - x, 5];
   }
 
+  // DRAW TEXT THAT WILL WRAP (inline: if wrap, start from 0 or provided x position)
   BlitTextWrap(DisplayChip, message, x, y, colour_code, inline) {
     let MAXWIDTH = 0;
     let xpos = x;
@@ -53,6 +55,7 @@ class FontChip {
     return [MAXWIDTH, ypos + 5 - y];
   }
 
+  // CREATE SPRITE FROM BINARY FONT AND BLIT
   BlitCharacter(DisplayChip, char, x, y, colour_code) {
     if (this.FONT[char.toLowerCase()] != null) {
       let charSprite = this.stringToSprite(
@@ -63,16 +66,18 @@ class FontChip {
     }
   }
 
+  // CONVERT BINARY STRING (for font) INTO SPRITE (colour sprite into single colour)
   stringToSprite(binaryString, colour_code) {
     return new SpriteChip(
       binaryString.split("").map((num) => {
         if (num == 0) {
+          // EMPTY CHAR
           return -1;
         } else if (num == 1) {
           return colour_code;
         } else return num;
       }),
-      3,
+      3, // FONT X AND Y DIMENSIONS
       5
     );
   }

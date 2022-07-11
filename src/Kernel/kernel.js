@@ -27,6 +27,10 @@ class Kernel {
     this.DisplayChip.Draw();
   }
 
+  Resume(program) {
+    this.loadedProgram = program;
+  }
+
   Load(program) {
     this.loadedProgram = program;
     this.loadedProgram.Start();

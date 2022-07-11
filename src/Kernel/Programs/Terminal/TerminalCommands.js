@@ -1,5 +1,6 @@
 const { Editor } = require("../Editor/Editor");
 const { Interpreter } = require("../Interpreter/interpreter");
+const { Lexer } = require("../Interpreter/Lexer/lexer");
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const DIGITS = "1234567890";
@@ -9,39 +10,36 @@ function Run(Terminal) {
   let cmd = parseCommand(Terminal.inputBuffer);
   let fileName = cmd.content[0];
   if (fileName == "" || fileName == undefined) {
-    Terminal.History.push({
-      type: "string",
-      content: "ERROR: FILE NOT FOUND",
-      colour: 14,
-    });
-    return;
-  }
-  let file = Terminal.Kernel.MemoryChip.GetFile(fileName);
-  if (file === undefined) {
-    Terminal.History.push({
-      type: "string",
-      content: "ERROR: FILE NOT FOUND",
-      colour: 14,
-    });
+    Terminal.appendHistory("string", "ERROR: FILE NOT FOUND", 14);
     return;
   }
 
-  Terminal.Kernel.Load(
-    new Interpreter(Terminal.Kernel, file.FileData, Terminal)
-  );
+  let file = Terminal.Kernel.MemoryChip.GetFile(fileName);
+  if (file === undefined) {
+    Terminal.appendHistory("string", "ERROR: FILE NOT FOUND", 14);
+    return;
+  }
+
+  let lexer = new Lexer(file.FileData);
+  let tokens,
+    err = lexer.Lex();
+
+  if (err != null) {
+    Terminal.appendHistory("string", err.msg, 14);
+  }
+  //TODO: Interpret and Parse in terminal, execute in seperate program
+  // Terminal.Kernel.Load(new Interpreter(Terminal.Kernel, file.FileData));
+  // Terminal.Kernel.lastProgram = Terminal;
 }
 
 function Touch(Terminal) {
   let cmd = parseCommand(Terminal.inputBuffer);
   let fileName = cmd.content[0];
+
   if (fileName != null) {
     let err = Terminal.Kernel.MemoryChip.CreateFile(fileName, "");
     if (err) {
-      Terminal.History.push({
-        type: "string",
-        content: "ERROR: FILE ALREADY EXISTS",
-        colour: 14,
-      });
+      Terminal.appendHistory("string", "ERROR: FILE ALREADY EXISTS", 14);
     }
   }
 }
@@ -59,20 +57,15 @@ function ChangeDirectory(Terminal) {
   }
 
   if (err == 1) {
-    Terminal.History.push({
-      type: "string",
-      content: "SYNTAX ERROR",
-      //   content: Terminal.Kernel.ErrorChip.GetError(),
-      colour: 14,
-    });
+    Terminal.appendHistory("string", "SYNTAX ERROR", 14);
     return;
   }
 
-  Terminal.History.push({
-    type: "string",
-    content: "/" + Terminal.Kernel.MemoryChip.GetFilePath() + "/",
-    colour: 12,
-  });
+  Terminal.appendHistory(
+    "string",
+    "/" + Terminal.Kernel.MemoryChip.GetFilePath() + "/",
+    12
+  );
 }
 
 function MakeDirectory(Terminal) {
@@ -81,11 +74,7 @@ function MakeDirectory(Terminal) {
   if (folderName != null) {
     let err = Terminal.Kernel.MemoryChip.CreateDirectory(folderName);
     if (err) {
-      Terminal.History.push({
-        type: "string",
-        content: "ERROR: FILE ALREADY EXISTS",
-        colour: 14,
-      });
+      Terminal.appendHistory("string", "ERROR: FILE ALREADY EXISTS", 14);
     }
   }
 }
@@ -100,85 +89,54 @@ function ListDirectory(Terminal) {
     let colour = 6;
     if (Terminal.Kernel.MemoryChip.CurrentDirectory.Files[i].Type == "folder")
       colour = 14;
-    Terminal.History.push({
-      type: "string",
-      content: content,
-      colour: colour,
-    });
+
+    Terminal.appendHistory("string", content, colour);
   }
 }
 
 function Edit(Terminal) {
   let fileName = parseCommand(Terminal.inputBuffer).content[0];
   if (fileName == "" || fileName == undefined) {
-    Terminal.History.push({
-      type: "string",
-      content: "ERROR: FILE NOT FOUND",
-      colour: 14,
-    });
+    Terminal.appendHistory("string", "ERROR: FILE NOT FOUND", 14);
     return;
   }
   let file = Terminal.Kernel.MemoryChip.GetFile(fileName);
   if (file === undefined) Terminal.Kernel.MemoryChip.CreateFile(fileName, "");
-  Terminal.Kernel.Load(new Editor(Terminal.Kernel, fileName, Terminal));
+  Terminal.Kernel.Load(new Editor(Terminal.Kernel, fileName));
+  Terminal.Kernel.lastProgram = Terminal;
 }
 
-function Welcome(Terminal) {
-  return [
-    {
-      type: "function",
-      content: (Kernel, y) => {
-        // return Kernel.Icons["welcome"].Blit(Kernel.DisplayChip, 0, 0);
-        Kernel.Icons["cop-80-icon"].Blit(Kernel.DisplayChip, 0, y);
-        return Kernel.Icons["cop-80"].Blit(
-          Kernel.DisplayChip,
-          Kernel.Icons["cop-80-icon"].width + 1,
-          y
-        );
-      },
-      colour: 0,
-    },
-    {
-      type: "string",
-      content: "Fantasy Console",
-      colour: 6,
-    },
-    {
-      type: "string",
-      content: "",
-      colour: 0,
-    },
-  ];
+function Cat(Terminal) {
+  let fileName = parseCommand(Terminal.inputBuffer).content[0];
+  if (fileName == "" || fileName == undefined) {
+    Terminal.appendHistory("string", "ERROR: FILE NOT FOUND", 14);
+    return;
+  }
+
+  let file = Terminal.Kernel.MemoryChip.GetFile(fileName);
+  if (file === undefined) {
+    Terminal.appendHistory("string", "ERROR: FILE NOT FOUND", 14);
+    return;
+  }
+
+  Terminal.appendHistory("string", file.FileData, 6);
 }
 
 function Echo(Terminal) {
   let cmd = parseCommand(Terminal.inputBuffer);
-  return {
-    type: "string",
-    content: cmd.content.join(""),
-    colour: 7,
-  };
+  Terminal.appendHistory("string", cmd.content.join(""), 6);
 }
 
 function Colour(Terminal) {
   let cmd = parseCommand(Terminal.inputBuffer);
   if (cmd.flags.length == 0 || cmd.flags[0].length < 2) {
-    return {
-      type: "string",
-      content: "SYNTAX ERROR",
-      //   content: Terminal.Kernel.ErrorChip.GetError(),
-      colour: 14,
-    };
+    Terminal.appendHistory("string", "SYNTAX ERROR", 14);
   }
 
   let colour = parseInt(cmd.flags[0].slice(1));
   if (colour == NaN || colour > 15) colour = 7;
 
-  return {
-    type: "string",
-    content: cmd.content.join(""),
-    colour: colour,
-  };
+  Terminal.appendHistory("string", cmd.content.join(""), colour);
 }
 
 class Command {
@@ -227,6 +185,7 @@ function parseCommand(command) {
         currentString = "";
         break;
 
+      // "-" signifies a flag (hence record seperatly (independant of order))
       case "-":
         var tempString = "-";
         i++;
@@ -252,6 +211,34 @@ function parseCommand(command) {
   );
 }
 
+function Welcome(Terminal) {
+  return [
+    {
+      type: "function",
+      content: (Kernel, y) => {
+        // return Kernel.Icons["welcome"].Blit(Kernel.DisplayChip, 0, 0);
+        Kernel.Icons["cop-80-icon"].Blit(Kernel.DisplayChip, 0, y);
+        return Kernel.Icons["cop-80"].Blit(
+          Kernel.DisplayChip,
+          Kernel.Icons["cop-80-icon"].width + 1,
+          y
+        );
+      },
+      colour: 0,
+    },
+    {
+      type: "string",
+      content: "Fantasy Console",
+      colour: 6,
+    },
+    {
+      type: "string",
+      content: "",
+      colour: 0,
+    },
+  ];
+}
+
 module.exports = {
   Welcome,
   Echo,
@@ -262,4 +249,5 @@ module.exports = {
   ChangeDirectory,
   Touch,
   Run,
+  Cat,
 };
