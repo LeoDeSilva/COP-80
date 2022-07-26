@@ -4,6 +4,7 @@ class Folder {
     this.Type = "folder";
     this.Name = name;
     this.Files = [];
+    this.SubDirs = [];
   }
 }
 
@@ -24,6 +25,20 @@ class MemoryChip {
     this.FilePath = [this.BaseDirectory];
   }
 
+  GetFiles() {
+    return this.CurrentDirectory.Files.sort((a, b) => {
+      if (a.Name > b.Name) return 1
+      else return -1
+    })
+  }
+
+  GetDirs() {
+    return this.CurrentDirectory.SubDirs.sort((a, b) => {
+      if (a.Name > b.Name) return 1
+      else return -1
+    })
+  }
+
   GetFilePath() {
     return this.FilePath.map((file) => file.Name).join("/");
   }
@@ -35,7 +50,7 @@ class MemoryChip {
   }
 
   GetDirectory(dirname) {
-    let folder = this.CurrentDirectory.Files.find((x) => x.Name === dirname);
+    let folder = this.CurrentDirectory.SubDirs.find((x) => x.Name === dirname);
     if (folder === undefined) return;
     if (folder.Type == "folder") return folder;
   }
@@ -60,7 +75,7 @@ class MemoryChip {
 
   CreateDirectory(folderName) {
     if (this.GetDirectory(folderName) != undefined) return true;
-    this.CurrentDirectory.Files.push(
+    this.CurrentDirectory.SubDirs.push(
       new Folder(folderName, this.CurrentDirectory)
     );
   }

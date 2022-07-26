@@ -1,4 +1,4 @@
-const { TOKENS, Error, Token } = require("./tokens");
+const { TOKENS, Error, Token, LETTERS, DIGITS, lookupIdentifier } = require("./tokens");
 
 class Lexer {
   constructor(fileString) {
@@ -12,22 +12,33 @@ class Lexer {
   }
 
   advance() {
-    if (this.readIndex >= this.fileString.length) this.char = "";
+    // IF NEXT CHAR TO BE READ DOESN'T EXIST (EOF)
+    if (this.readIndex >= this.fileString.length)
+      this.char = TOKENS.EOF; // "" = placeholder for EOF: hack
     else this.char = this.fileString[this.readIndex];
 
     this.index = this.readIndex;
     this.readIndex++;
   }
 
+  // USED IN MULTICHAR (CHECK NEXT CHAR w/o ADVANCING)
+  peek() {
+    if (this.readIndex >= this.fileString.length) return TOKENS.EOF; // IF CHAR EXISTS
+    return this.fileString[this.readIndex];
+  }
+
   Lex() {
+    console.log(this.fileString)
+    
     let tokens = [];
-    while (this.char != "") {
-      let tok,
-        err = this.lexAhead();
-      if (err != null) return [], err;
+    while (this.char != TOKENS.EOF) {
+      // LOOP UNTIL EOF : "" = placeholder for EOF
+      let [tok, err] = this.lexAhead();
+      if (err != null) return [[], err]
       tokens.push(tok);
     }
-    return tokens, null;
+    tokens.push(new Token(TOKENS.EOF, "EOF", this.lineNumber));
+    return [tokens, null];
   }
 
   lexAhead() {
@@ -36,20 +47,168 @@ class Lexer {
     this.eatWhitespace();
 
     switch (this.char) {
+      case "+":
+        token = new Token(TOKENS.ADD, this.char, this.lineNumber);
+        break;
+
+      case "-":
+        token = new Token(TOKENS.SUB, this.char, this.lineNumber);
+        break;
+
+      case "*":
+        token = new Token(TOKENS.MUL, this.char, this.lineNumber);
+        break;
+
+      case "/":
+        token = new Token(TOKENS.DIV, this.char, this.lineNumber);
+        break;
+
+      case "%":
+        token = new Token(TOKENS.MOD, this.char, this.lineNumber);
+        break;
+
+      case "^":
+        token = new Token(TOKENS.POW, this.char, this.lineNumber);
+        break;
+
+      case "(":
+        token = new Token(TOKENS.LPAREN, this.char, this.lineNumber);
+        break;
+
+      case ")":
+        token = new Token(TOKENS.RPAREN, this.char, this.lineNumber);
+        break;
+
+      case "[":
+        token = new Token(TOKENS.LSQUARE, this.char, this.lineNumber);
+        break;
+
+      case "]":
+        token = new Token(TOKENS.RSQUARE, this.char, this.lineNumber);
+        break;
+
+      case "{":
+        token = new Token(TOKENS.LBRACE, this.char, this.lineNumber);
+        break;
+
+      case "}":
+        token = new Token(TOKENS.RBRACE, this.char, this.lineNumber);
+        break;
+
+      case ",":
+        token = new Token(TOKENS.COMMA, this.char, this.lineNumber);
+        break;
+
+      case ".":
+        token = new Token(TOKENS.DOT, this.char, this.lineNumber);
+        break;
+
+      case "\n":
+          token = new Token(TOKENS.NEW_LINE, "/n", this.lineNumber)
+          this.lineNumber++;
+          break
+
+      case ";": //TODO: REMOVE IF NOT USING SEMI's
+        token = new Token(TOKENS.SEMICOLON, this.char, this.lineNumber);
+        break;
+
+      case "=":
+        token = this.lexMultichar(TOKENS.EQ, "=", TOKENS.EE);
+        break;
+
+      case "!":
+        token = this.lexMultichar(TOKENS.BANG, "=", TOKENS.NE);
+        break;
+
+      case ">":
+        token = this.lexMultichar(TOKENS.GT, "=", TOKENS.GTE);
+        break;
+
+      case "<":
+        token = this.lexMultichar(TOKENS.LT, "=", TOKENS.LTE);
+        break;
+
+
+      case "'":
+      case '"':
+        [token, err] = this.lexString(this.char);
+        break;
+
       default:
-        err = new Error(
-          "SYNTAX ERROR LINE " + this.lineNumber + " CHAR " + this.char
-        );
+        if (LETTERS.includes(this.char)) {
+          return this.lexIdentifier();
+        } else if (DIGITS.includes(this.char)) {
+          return this.lexNumber();
+        } else {
+          err = new Error(
+            "SYNTAX ERROR LINE " + this.lineNumber + " CHAR " + this.char
+          );
+        }
     }
+
     this.advance();
-    return token, err;
+    return [token, err];
   }
 
   eatWhitespace() {
-    while ((" ", "\t", "\r", "\n").includes(this.char)) {
-      if (this.char == "\n") this.lineNumber++;
+    while ([" ", "\t", "\r"].includes(this.char)) {
+      //if (this.char == "\n") this.lineNumber++;
       this.advance();
     }
+  }
+
+  lexMultichar(primaryType, secondaryChar, secondaryType) {
+    let primaryChar = this.char;
+    if (this.peek() == secondaryChar) {
+      this.advance();
+      return new Token(secondaryType, primaryChar + this.char, this.lineNumber);
+    }
+    return new Token(primaryType, primaryChar, this.lineNumber);
+  }
+
+  lexNumber() {
+    //TODO: HANDLE FLOATING POINTS
+    let number = "";
+    while (DIGITS.includes(this.char)) {
+      number += this.char;
+      this.advance();
+    }
+    return [new Token(TOKENS.NUMBER, number, this.lineNumber), null];
+  }
+
+  lexIdentifier() {
+    let identifier = "";
+    while (LETTERS.includes(this.char)) {
+      identifier += this.char;
+      this.advance();
+    }
+    return lookupIdentifier(new Token(TOKENS.IDENTIFIER, identifier, this.lineNumber))
+    //return [new Token(TOKENS.IDENTIFIER, identifier, this.lineNumber), null];
+  }
+
+  lexString(terminator) {
+    this.advance();
+    let lexedString = "";
+
+    while (this.char != terminator) {
+      if (this.char == "")
+        // IF EOF w/o string terminating:
+        return [
+          null,
+          new Error(
+            "SYNTAX ERROR LINE " +
+              this.lineNumber +
+              "\nMISSING STRING TERMINATOR " +
+              terminator
+          ),
+        ];
+
+      lexedString += this.char;
+      this.advance();
+    }
+
+    //this.advance();
+    return [new Token(TOKENS.STRING, lexedString, this.lineNumber), null];
   }
 }
 

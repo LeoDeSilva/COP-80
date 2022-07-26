@@ -34,6 +34,9 @@ class Terminal {
 
     this.startTimeout = 40;
     this.startChance = 1;
+
+    this.tabCirculateIndex = 0
+    this.prevCommand = ""
   }
 
   Start() {
@@ -96,6 +99,31 @@ class Terminal {
       content: content,
       colour: colourCode,
     });
+  }
+
+  HandleTab() {
+    let command = this.inputBuffer.toUpperCase().split(" ")[0]
+
+    if (command != this.prevCommand) this.tabCirculateIndex = 0
+    this.prevCommand = command
+
+    switch (command) {
+      case "CAT":
+      case "EDIT":
+      case "RUN":
+        if (this.Kernel.MemoryChip.CurrentDirectory.Files.length < 1) { return }
+        if (this.Kernel.MemoryChip.CurrentDirectory.Files.length <= this.tabCirculateIndex) { this.tabCirculateIndex = 0 }
+        this.inputBuffer = this.inputBuffer.toUpperCase().split(" ")[0] + " " + this.Kernel.MemoryChip.GetFiles()[this.tabCirculateIndex].Name
+        this.tabCirculateIndex ++;
+        break;
+
+      case "CD":
+        if (this.Kernel.MemoryChip.CurrentDirectory.SubDirs.length < 1) { return }
+        if (this.Kernel.MemoryChip.CurrentDirectory.SubDirs.length <= this.tabCirculateIndex) { this.tabCirculateIndex = 0 }
+        this.inputBuffer = this.inputBuffer.toUpperCase().split(" ")[0] + " " + this.Kernel.MemoryChip.GetDirs()[this.tabCirculateIndex].Name
+        this.tabCirculateIndex ++;
+        break;
+    }
   }
 
   Execute() {
@@ -168,6 +196,12 @@ class Terminal {
 
       case "ENTER":
         this.Execute();
+        break;
+
+      case "TAB":
+        this.HandleTab()
+        this.cursorIndex = this.inputBuffer.length
+        break; 
 
       case "BACKSPACE":
         this.inputBuffer =

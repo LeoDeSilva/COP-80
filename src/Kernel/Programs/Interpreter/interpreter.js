@@ -1,10 +1,11 @@
-const { Error } = require("./Lexer/tokens");
-const { Lexer } = require("./Lexer/lexer");
+const { Evaluate } = require("./Evaluator/evaluator.js");
+const { CreateEnvironment } = require("./Evaluator/objects.js")
 
 class Interpreter {
-  constructor(kernel, programString) {
+  constructor(kernel, AST) {
     this.Kernel = kernel;
-    this.programString = programString;
+    this.AST = AST
+    this.Environment = CreateEnvironment()
     this.error = "";
   }
 
@@ -31,12 +32,10 @@ class Interpreter {
   }
 
   Interpret() {
-    let lexer = new Lexer(this.programString);
-    let tokens,
-      err = lexer.Lex();
-
-    if (err != null) {
-      this.error = err.msg;
+    let [result, evalulatorErr] = Evaluate(this.AST, this.Environment)
+    if (evalulatorErr != null) {
+      this.error = evalulatorErr.msg
+      return
     }
   }
 }

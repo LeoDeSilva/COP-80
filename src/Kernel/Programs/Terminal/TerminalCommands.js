@@ -1,6 +1,7 @@
 const { Editor } = require("../Editor/Editor");
 const { Interpreter } = require("../Interpreter/interpreter");
 const { Lexer } = require("../Interpreter/Lexer/lexer");
+const { Parser } = require("../Interpreter/Parser/parser");
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const DIGITS = "1234567890";
@@ -21,15 +22,25 @@ function Run(Terminal) {
   }
 
   let lexer = new Lexer(file.FileData);
-  let tokens,
-    err = lexer.Lex();
+  let [tokens, lexerErr] = lexer.Lex();
+  console.log(tokens);
 
-  if (err != null) {
-    Terminal.appendHistory("string", err.msg, 14);
+  if (lexerErr != null) {
+    Terminal.appendHistory("string", lexerErr.msg, 14);
+    return;
   }
+
+  let parser = new Parser(tokens);
+  let [ast, parserErr] = parser.Parse();
+  if (parserErr != null) {
+    Terminal.appendHistory("string", parserErr.msg, 14);
+    return;
+  }
+  console.log(ast)
+
   //TODO: Interpret and Parse in terminal, execute in seperate program
-  // Terminal.Kernel.Load(new Interpreter(Terminal.Kernel, file.FileData));
-  // Terminal.Kernel.lastProgram = Terminal;
+  Terminal.Kernel.Load(new Interpreter(Terminal.Kernel, ast));
+  Terminal.Kernel.lastProgram = Terminal;
 }
 
 function Touch(Terminal) {
@@ -80,17 +91,14 @@ function MakeDirectory(Terminal) {
 }
 
 function ListDirectory(Terminal) {
-  for (
-    let i = 0;
-    i < Terminal.Kernel.MemoryChip.CurrentDirectory.Files.length;
-    i++
-  ) {
-    let content = Terminal.Kernel.MemoryChip.CurrentDirectory.Files[i].Name;
-    let colour = 6;
-    if (Terminal.Kernel.MemoryChip.CurrentDirectory.Files[i].Type == "folder")
-      colour = 14;
+  for ( let i = 0; i < Terminal.Kernel.MemoryChip.CurrentDirectory.SubDirs.length; i++) {
+    let content = Terminal.Kernel.MemoryChip.CurrentDirectory.SubDirs[i].Name;
+    Terminal.appendHistory("string", content, 14);
+  }
 
-    Terminal.appendHistory("string", content, colour);
+  for ( let i = 0; i < Terminal.Kernel.MemoryChip.CurrentDirectory.Files.length; i++) {
+    let content = Terminal.Kernel.MemoryChip.CurrentDirectory.Files[i].Name;
+    Terminal.appendHistory("string", content, 6);
   }
 }
 
