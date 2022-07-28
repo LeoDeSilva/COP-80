@@ -13,6 +13,9 @@ const KEYWORDS = {
     THEN: "THEN",
     DO: "DO",
     GO: "GO",
+
+    AND: "AND",
+    OR: "OR",
 }
 
 class Token {
@@ -73,6 +76,9 @@ module.exports = {
     THEN: "THEN",
     DO: "DO",
     GO: "GO",
+
+    AND: "AND",
+    OR: "OR",
     
     //UNPRINTABLES
     EOF: "EOF",

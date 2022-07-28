@@ -130,6 +130,11 @@ class Atom extends Object {
       case TOKENS.GTE:
         result = this.Value >= Right.Value ? 1 : 0
         break;
+
+      case TOKENS.AND:
+        result = this.Value == 1 && Right.Value == 1 ? 1 : 0
+      case TOKENS.OR:
+        result = this.Value == 1 || Right.Value == 1 ? 1 : 0
     }
     return [result, err]
   }

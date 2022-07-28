@@ -1,6 +1,8 @@
 const { TOKENS, Error, Token, LETTERS, DIGITS } = require("../Lexer/tokens");
 
 const PREFERENCES = {
+  AND: 5,
+  OR: 5,
   EE: 10,
   NE: 10,
   GT: 10,
@@ -19,6 +21,8 @@ const PREFERENCES = {
 
 // To ensure parsing of binary operations only allows specific tokens
 const BIN_OPERATIONS = [
+  TOKENS.AND,
+  TOKENS.OR,
   TOKENS.EE,
   TOKENS.NE,
   TOKENS.LT,
