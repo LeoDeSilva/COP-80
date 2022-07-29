@@ -11,11 +11,12 @@ function Evaluate(node, Environment) {
   switch (node.Type) {
     case TOKENS.ASSIGN:
       return Assign(node, Environment)
-      break;
+
+    case TOKENS.IF:
+      return If(node, Environment)
 
     case TOKENS.BINARY_OP:
       return BinaryOperation(node, Environment)
-      break;
 
     case TOKENS.UNARY_OP:
       return UnaryOperation(node, Environment)
@@ -25,17 +26,39 @@ function Evaluate(node, Environment) {
 
     case TOKENS.NUMBER:
       return [new Number(node.LineNumber, node.Value), null]
-      break;
 
     case TOKENS.STRING:
       return [new String(node.LineNumber, node.Value), null]
 
     case TOKENS.PROGRAM:
       return Program(node, Environment)
-      break;
   }
 
-  return [null, null]
+  return [null, new Error("EVAL_ERROR: TOKEN " + node.Type + " NOT IMPLEMENTED")]
+}
+
+function If(ifNode, Environment) {
+  let isSatisfied = false
+  let index = 0
+  while (!isSatisfied && index < ifNode.Conditionals.length) {
+    let [condition, conditionErr] = Evaluate(ifNode.Conditionals[index][0], Environment)
+    if (conditionErr != null) return [null, conditionErr]
+
+    if (condition.Value == 1) {
+      isSatisfied = true
+      //TODO  HANDLE returns from functions inside if statements
+      let [, evalErr] = Evaluate(ifNode.Conditionals[index][1], Environment)
+      if (evalErr != null) return [null, evalErr]
+    }
+     index++
+  }
+
+  if (!isSatisfied) {
+    let [, evalErr] = Evaluate(ifNode.Alternative, Environment)
+    if (evalErr != null) return [null, evalErr]
+  }
+
+  return [new Null(), null]
 }
 
 function Identifier(identifierNode, Environment) {

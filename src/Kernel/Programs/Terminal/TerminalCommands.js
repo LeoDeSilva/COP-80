@@ -23,7 +23,6 @@ function Run(Terminal) {
 
   let lexer = new Lexer(file.FileData);
   let [tokens, lexerErr] = lexer.Lex();
-  console.log(tokens);
 
   if (lexerErr != null) {
     Terminal.appendHistory("string", lexerErr.msg, 14);

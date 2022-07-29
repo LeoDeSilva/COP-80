@@ -3,6 +3,7 @@ const {
   ProgramNode,
   NumberNode,
   StringNode,
+  IfNode,
   IdentifierNode,
   AssignNode,
   BinaryOperationNode,
@@ -57,15 +58,75 @@ class Parser {
       case TOKENS.LOCAL:
         this.advance()
         return this.parseAssign(TOKENS.LOCAL)
-        break;
+
+      case TOKENS.IF:
+        return this.parseIf()
 
       case TOKENS.IDENTIFIER:
         if (this.peek().Type != TOKENS.EQ) break;
         return this.parseAssign(TOKENS.GLOBAL)
-        break;
 
     }
     return this.parsePrattExpression(0); // 10, 10+10
+  }
+
+  parseIf() { 
+    let ifNode = new IfNode(this.lineNumber)
+
+    while ([TOKENS.IF, TOKENS.ELIF, TOKENS.ELSE].includes(this.token.Type)) {
+      if ([TOKENS.IF, TOKENS.ELIF].includes(this.token.Type)) {
+        this.advance()
+
+        let [condition, conditionErr] = this.parsePrattExpression(0)
+        if (conditionErr != null) return [null, conditionErr]
+
+        if (this.token.Type != TOKENS.THEN) return [
+          null, 
+          new Error("SYNTAX_ERROR LINE " + this.lineNumber + ", EXPECTED  KEYWORD: 'THEN'")
+        ]
+
+        this.advance()
+        let [consequence, consequenceErr] = this.parseUntil([TOKENS.END, TOKENS.ELSE, TOKENS.ELIF])
+        if (consequenceErr != null) return [null, consequenceErr]
+
+        ifNode.Conditionals.push([condition, consequence])
+      } else {
+        this.advance()
+
+        let [consequence, consequenceErr] = this.parseUntil([TOKENS.END, TOKENS.ELSE, TOKENS.ELIF])
+        if (consequenceErr != null) return [null, consequenceErr]
+
+        ifNode.Alternative = consequence
+      }
+
+    }
+
+    this.advance()
+    return [ifNode, null] 
+  }
+
+  parseUntil(TERMINATORS) {
+    let Block = new ProgramNode(this.lineNumber, []);
+    while (!TERMINATORS.includes(this.token.Type)) {
+      if (this.token.Type == TOKENS.EOF) return [
+        null, 
+        new Error("SYNTAX ERROR LINE " + this.token.LineNumber + ", EXPECTED END AFTER IF STATEMENT")
+      ]
+      //if ([TOKENS.NEW_LINE, TOKENS.EOF].includes(this.token.Type)) {
+      if (this.token.Type == TOKENS.NEW_LINE) {
+        this.advance();
+        continue;
+      }
+
+      let [node, err] = this.parseExpression();
+      if (err != null) return [null, err];
+      if (![TOKENS.NEW_LINE, TOKENS.EOF].includes(this.token.Type)) {
+         return [null, new Error("SYNTAX_ERROR: EXPECTING NEW LINE AT LINE " + this.lineNumber)];
+      } 
+      this.advance()
+      Block.Nodes.push(node);
+    }
+    return [Block, null];
   }
 
   parseAssign(Scope) {

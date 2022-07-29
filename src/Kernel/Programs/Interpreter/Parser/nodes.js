@@ -52,6 +52,14 @@ class ProgramNode extends Node {
   }
 }
 
+class IfNode extends Node {
+  constructor(LineNumber) {
+    super(LineNumber, TOKENS.IF)
+    this.Conditionals = []
+    this.Alternative = null
+  }
+}
+
 class AssignNode extends Node {
   constructor(LineNumber, Scope, Left, Right) {
     super(LineNumber, TOKENS.ASSIGN)
@@ -107,6 +115,7 @@ module.exports = {
   AssignNode,
   BinaryOperationNode,
   UnaryOperationNode,
+  IfNode,
   PREFERENCES,
   BIN_OPERATIONS,
 };
