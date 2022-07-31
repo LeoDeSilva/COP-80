@@ -44,25 +44,14 @@ function While(whileNode, Environment) {
   let [condition,conditionErr] = Evaluate(whileNode.Condition, Environment)
   if (conditionErr != null) return [null, conditionErr]
 
-  // NO CLUE WHY THIS WORKS, WHILE FUNCTIONS AS A INFINITE LOOP (IF INITIALLY TRUE) AND NEVER STOPS
-  // THEREFORE BREAK IF NOT SATISFIED IN THE LOOP
-  // THIS IS A DISGUSTING PATCH
-  let iteration = 0
-  while (condition.Value == 1) {
-    //BUGGY FIX COZ I DIDNT WANT TO DO ASYNC STUFF
-    if (iteration > 10000) return [
-      null, 
-      new Error("LINE: " + whileNode.LineNumber +" LOOP STALLING PROGRAM, EXCEEDED 10000 ITERATIONS")
-    ]
-      
+  let isSatisfied = condition.Value == 1
+  while (isSatisfied) {
     let [, consequenceErr] = Evaluate(whileNode.Consequence, Environment)
     if (consequenceErr != null) return [null, consequenceErr]
 
-    let [satisfied, satisfiedErr] = Evaluate(whileNode.Condition, Environment)
-    if (satisfiedErr != null) return [null, satisfiedErr]
-    if (satisfied.Value == 0) break;
-
-    iteration++
+    [condition,conditionErr] = Evaluate(whileNode.Condition, Environment)
+    if (conditionErr != null) return [null, conditionErr]
+    isSatisfied = condition = condition.Value
   }
 
   return [new Null(), null]

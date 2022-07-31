@@ -119,7 +119,7 @@ class Atom extends Object {
         result = this.Value != Right.Value ? 1 : 0
         break;
       case TOKENS.LT:
-        result = this.Value > Right.Value ? 1 : 0
+        result = this.Value < Right.Value ? 1 : 0
         break;
       case TOKENS.LTE:
         result = this.Value <= Right.Value ? 1 : 0
@@ -132,9 +132,14 @@ class Atom extends Object {
         break;
 
       case TOKENS.AND:
-        result = this.Value == 1 && Right.Value == 1 ? 1 : 0
+        console.log(this.Value == 1 && Right.Value == 1)
+        result = (this.Value == 1 && Right.Value == 1) ? 1 : 0
+        break;
+
       case TOKENS.OR:
-        result = this.Value == 1 || Right.Value == 1 ? 1 : 0
+        console.log(this.Value == 1 || Right.Value == 1)
+        result = (this.Value == 1 || Right.Value == 1) ? 1 : 0
+        break;
     }
     return [result, err]
   }

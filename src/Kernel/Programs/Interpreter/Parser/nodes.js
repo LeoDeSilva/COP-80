@@ -52,6 +52,14 @@ class ProgramNode extends Node {
   }
 }
 
+class WhileNode extends Node {
+  constructor(LineNumber, Condition, Consequence) {
+    super(LineNumber, TOKENS.WHILE)
+    this.Condition = Condition
+    this.Consequence = Consequence
+  }
+}
+
 class IfNode extends Node {
   constructor(LineNumber) {
     super(LineNumber, TOKENS.IF)
@@ -118,4 +126,5 @@ module.exports = {
   IfNode,
   PREFERENCES,
   BIN_OPERATIONS,
+  WhileNode,
 };

@@ -2,6 +2,7 @@ const { TOKENS, Error, Token } = require("../Lexer/tokens");
 const {
   ProgramNode,
   NumberNode,
+  WhileNode,
   StringNode,
   IfNode,
   IdentifierNode,
@@ -62,12 +63,33 @@ class Parser {
       case TOKENS.IF:
         return this.parseIf()
 
+      case TOKENS.WHILE:
+        this.advance()
+        return this.parseWhile()
+
       case TOKENS.IDENTIFIER:
         if (this.peek().Type != TOKENS.EQ) break;
         return this.parseAssign(TOKENS.GLOBAL)
 
     }
     return this.parsePrattExpression(0); // 10, 10+10
+  }
+
+  parseWhile() {
+    let [condition, conditionErr] = this.parsePrattExpression(0)
+    if (conditionErr != null) return [null, conditionErr]
+
+    if (this.token.Type != TOKENS.DO) return [
+      null,
+      new Error("SYNTAX_ERROR LINE " + this.lineNumber + ", EXPECTED  KEYWORD: 'DO'")
+    ]
+
+    this.advance()
+    let [consequence, consequenceErr] = this.parseUntil([TOKENS.END])
+    if (consequenceErr != null) return [null, consequenceErr]
+
+    this.advance()
+    return [new WhileNode(this.LineNumber, condition, consequence), null]
   }
 
   parseIf() { 
