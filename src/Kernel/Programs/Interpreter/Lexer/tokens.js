@@ -8,6 +8,7 @@ const KEYWORDS = {
     ELSE: "ELSE",
     ELIF: "ELIF",
     FOR: "FOR",
+    IN: "IN",
     WHILE: "WHILE",
     FN: "FN",
 
@@ -62,6 +63,8 @@ module.exports = {
     STRING: "STRING",
     NUMBER: "NUMBER",
     IDENTIFIER: "IDENTIFIER",
+    FUNCTION: "FUNCTION",
+    INVOKE: "INVOKE",
     KEYWORD: "KEYWORD",
 
     GLOBAL: "GLOBAL",

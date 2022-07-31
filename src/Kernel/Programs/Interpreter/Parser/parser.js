@@ -1,10 +1,13 @@
 const { TOKENS, Error, Token } = require("../Lexer/tokens");
 const {
   ProgramNode,
+  FunctionNode,
+  InvokeNode,
   NumberNode,
   WhileNode,
   StringNode,
   IfNode,
+  ReturnNode,
   IdentifierNode,
   AssignNode,
   BinaryOperationNode,
@@ -67,12 +70,104 @@ class Parser {
         this.advance()
         return this.parseWhile()
 
+      case TOKENS.RETURN:
+        this.advance()
+        return this.parseReturn()
+
+      case TOKENS.FOR:
+        this.advance()
+        return this.parseFor()
+
+      case TOKENS.FN:
+        this.advance()
+        return this.parseFunction()
+
       case TOKENS.IDENTIFIER:
         if (this.peek().Type != TOKENS.EQ) break;
         return this.parseAssign(TOKENS.GLOBAL)
 
     }
     return this.parsePrattExpression(0); // 10, 10+10
+  }
+
+  parseReturn() {
+    let [returnExpression, returnErr] = this.parsePrattExpression(0)
+    if (returnErr != null) return [null, returnErr]
+
+    return [new ReturnNode(this.lineNumber, returnExpression), null]
+  }
+
+  parseFunction() {
+    if (this.token.Type != TOKENS.IDENTIFIER) {
+      return [
+        null, 
+        new Error("SYNTAX_ERROR LINE " + this.lineNumber + ", EXPECTED IDENTIFIER AFTER 'FN'")
+      ]
+    }
+
+    let identifier = new IdentifierNode(this.lineNumber, this.token.Literal)
+    this.advance()
+
+    if (this.token.Type != TOKENS.LPAREN) {
+      return [
+        null, 
+        new Error("SYNTAX_ERROR LINE " + this.lineNumber + ", EXPECTED '(' AFTER IDENTIFIER")
+      ]
+    }
+
+    let [parameters, paramErr] = this.parseParameters() // start parsing on ( end on )
+    if (paramErr != null) return [null, paramErr]
+    this.advance()
+
+    if (this.token.Type != TOKENS.GO) return [
+      null,
+      new Error("SYNTAX_ERROR LINE " + this.lineNumber + ", EXPECTED  KEYWORD: 'GO'")
+    ]
+
+    this.advance()
+
+    let [block, blockErr] = this.parseUntil([TOKENS.END])
+    if (blockErr != null) return [null, blockErr]
+
+    this.advance()
+    return [new FunctionNode(this.lineNumber, identifier, parameters, block)]
+  }
+
+  parseParameters() {
+    let parameters = []
+    this.advance()
+
+    if (this.token.Type == TOKENS.RPAREN) {
+      return [parameters, null] // continue on )
+    }
+
+    parameters.push(new IdentifierNode(this.lineNumber, this.token.Literal))
+    this.advance()
+
+    while (this.token.Type == TOKENS.COMMA) {
+      this.advance()
+      if (this.token.Type != TOKENS.IDENTIFIER) {
+        return [
+          null, 
+          new Error("SYNTAX_ERROR LINE " + this.lineNumber + ", EXPECTED IDENTIFIER AFTER 'FN'")
+        ]
+      }
+      parameters.push(new IdentifierNode(this.lineNumber, this.token.Literal))
+      this.advance()
+    }
+
+    if (this.token.Type != TOKENS.RPAREN) {
+      return [
+        null,
+        new Error("SYNTAX_ERROR LINE " + this.lineNumber + ", EXPECTED ) AFTER PARAMETERS")
+      ]
+    }
+
+    return [parameters, null]
+  }
+
+  parseFor() {
+      
   }
 
   parseWhile() {
@@ -206,7 +301,7 @@ class Parser {
       case TOKENS.IDENTIFIER:
         let identifier = this.token.Literal
         this.advance()
-        return [new IdentifierNode(this.lineNumber, identifier), null]
+        return this.parsePostfix(new IdentifierNode(this.lineNumber, identifier))
 
       default:
         return [
@@ -219,6 +314,46 @@ class Parser {
           ),
         ];
     }
+  }
+
+  parsePostfix(node) {
+    switch (this.token.Type) {
+      case TOKENS.LPAREN:
+        this.advance()
+        let [args, argErr] = this.parseArguments() 
+        if (argErr != null) return [null, argErr]
+        this.advance()
+        return [new InvokeNode(this.LineNumber, node, args), null]
+    }
+    
+    return [node, null]
+  }
+
+  parseArguments() {
+    let args = []
+    if (this.token.Type == TOKENS.RPAREN) {
+      return [args, null] // continue on )
+    }
+
+    let [arg, argErr] = this.parsePrattExpression(0)  
+    if (argErr != null) return [null, argErr]
+    args.push(arg)
+
+    while (this.token.Type == TOKENS.COMMA) {
+      this.advance()
+      let [arg, argErr] = this.parsePrattExpression(0)  
+      if (argErr != null) return [null, argErr]
+      args.push(arg)
+    }
+
+    if (this.token.Type != TOKENS.RPAREN) {
+      return [
+        null,
+        new Error("SYNTAX_ERROR LINE " + this.lineNumber + ", EXPECTED ) AFTER PARAMETERS")
+      ]
+    }
+
+    return [args, null]
   }
 
   parseUnary() {

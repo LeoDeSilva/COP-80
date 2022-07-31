@@ -8,7 +8,10 @@ function CreateEnvironment() {
 // Store variables, functions etc. - refresh every program run
 class Environment {
   constructor() {
-    this.Global = {}
+    this.Global = {
+      TRUE: new Number(0,1),
+      FALSE: new Number(0,0),
+    }
     this.Local = {}
     this.Functions = {}
   }
@@ -25,6 +28,21 @@ class Object {
 class Null extends Object {
   constructor(LineNumber) {
     super(LineNumber, TOKENS.NULL)
+  }
+}
+
+class Return extends Object {
+  constructor(LineNumber, Expression) {
+    super(LineNumber, TOKENS.RETURN)
+    this.Expression = Expression
+  }
+}
+
+class Function extends Object {
+  constructor(LineNumber, Parameters, Body) {
+    super(LineNumber, TOKENS.FUNCTION)
+    this.Parameters = Parameters
+    this.Body = Body
   }
 }
 
@@ -185,5 +203,7 @@ module.exports = {
   CreateEnvironment,
   Number,
   String,
+  Function,
+  Return,
   Null,
 }

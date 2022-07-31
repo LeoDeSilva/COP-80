@@ -52,6 +52,32 @@ class ProgramNode extends Node {
   }
 }
 
+class ReturnNode extends Node {
+  constructor(LineNumber, Expression) {
+    super(LineNumber, TOKENS.RETURN)
+    this.Expression = Expression
+  }
+}
+
+class InvokeNode extends Node {
+  constructor(LineNumber, Function, Arguments) {
+    super(LineNumber, TOKENS.INVOKE) 
+    this.Function = Function
+    this.Arguments = Arguments
+  }
+}
+
+class FunctionNode extends Node {
+  constructor(LineNumber, Identifier, Parameters, Body) {
+    super(LineNumber, TOKENS.FUNCTION)
+    this.Identifier = Identifier
+    this.Parameters = Parameters
+    this.Body = Body
+  }
+}
+
+class ForNode extends Node { }
+
 class WhileNode extends Node {
   constructor(LineNumber, Condition, Consequence) {
     super(LineNumber, TOKENS.WHILE)
@@ -121,9 +147,12 @@ module.exports = {
   StringNode,
   IdentifierNode,
   AssignNode,
+  FunctionNode,
+  InvokeNode,
   BinaryOperationNode,
   UnaryOperationNode,
   IfNode,
+  ReturnNode,
   PREFERENCES,
   BIN_OPERATIONS,
   WhileNode,

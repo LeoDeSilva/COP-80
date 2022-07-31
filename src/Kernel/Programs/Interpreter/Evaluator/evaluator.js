@@ -2,7 +2,10 @@ const { TOKENS, Error, Token } = require("../Lexer/tokens");
 
 const {
   Number,
+  Function,
   String,
+  CreateEnvironment,
+  Return,
   Null,
 } = require("./objects.js");
 
@@ -14,6 +17,12 @@ function Evaluate(node, Environment) {
 
     case TOKENS.IF:
       return If(node, Environment)
+
+    case TOKENS.FUNCTION:
+      return FunctionDeclaration(node, Environment)
+    
+    case TOKENS.INVOKE:
+      return Invoke(node, Environment)
 
     case TOKENS.WHILE:
       return While(node, Environment)
@@ -27,17 +36,89 @@ function Evaluate(node, Environment) {
     case TOKENS.IDENTIFIER:
       return Identifier(node, Environment)
 
+    case TOKENS.RETURN:
+      return ReturnWrapper(node, Environment)
+
     case TOKENS.NUMBER:
       return [new Number(node.LineNumber, node.Value), null]
 
     case TOKENS.STRING:
       return [new String(node.LineNumber, node.Value), null]
 
+
     case TOKENS.PROGRAM:
       return Program(node, Environment)
   }
 
   return [null, new Error("EVAL_ERROR: TOKEN " + node.Type + " NOT IMPLEMENTED")]
+}
+
+function ReturnWrapper(returnNode, Environment) {
+  let [expression, expressionErr] = Evaluate(returnNode.Expression, Environment)
+  if (expressionErr != null) return [null, expressionErr]
+  return [new Return(returnNode.LineNumber, expression), null]
+}
+
+function Invoke(invokeNode, Environment) {
+  let [func, funcErr] = Evaluate(invokeNode.Function, Environment) 
+  if (funcErr != null) return [null, funcErr]
+
+  let [args, argErr] = evalArguments(invokeNode.Arguments, Environment)
+  if (argErr != null) return [null, argErr]
+
+  let [enclosedEnvironment, envErr] = extendEnvironment(Environment, args, func) 
+  if (envErr != null) return [null, envErr]
+
+  //POSSIBLY WRAP RETURN VALUE
+  return Evaluate(func.Body, enclosedEnvironment)
+}
+
+function extendEnvironment(wrapper, args, func) {
+  let enclosed = CreateEnvironment()
+  enclosed.Global = wrapper.Global
+
+  if (args.length > func.Parameters.length) {
+    return [
+      null,
+      new Error("LINE " + func.LineNumber + " SUPPLIED ARGS TO FUNCTION: " + func.Identifier.Identifier + " GREATER THAN " + func.Parameters.length)
+    ]
+  } else if (args.length < func.Parameters.length) {
+    return [
+      null,
+      new Error("LINE " + func.LineNumber + " SUPPLIED ARGS TO FUNCTION: " + func.Identifier.Identifier + " LESS THAN " + func.Parameters.length)
+    ]
+  }
+
+  for (let i = 0; i < args.length; i++) {
+    enclosed.Local[func.Parameters[i].Identifier] = args[i]
+  }
+
+  return [enclosed, null]
+}
+
+function evalArguments(args, Environment) {
+  let resultArgs = []
+  for (let i = 0; i < args.length; i++) {
+    let [evaluated, evalErr] = Evaluate(args[i], Environment)
+    if (evalErr != null) return [null, evalErr]
+    resultArgs.push(evaluated)
+  }
+  return [resultArgs, null]
+}
+
+function FunctionDeclaration(functionNode, Environment) {
+  if (Environment.Global[functionNode.Identifier.Identifier] != null) return [
+    null,
+    new Error("LINE " +  functionNode.LineNumber + " VARIABLE WITH NAME: " + functionNode.Identifier.Identifier + " ALREADY EXISTS")  
+  ]
+  
+  Environment.Global[functionNode.Identifier.Identifier] = new Function(
+    functionNode.LineNumber, 
+    functionNode.Parameters, 
+    functionNode.Body
+  )  
+
+  return [new Null(), null]
 }
 
 function While(whileNode, Environment) {
@@ -55,8 +136,9 @@ function While(whileNode, Environment) {
       new Error("LINE: " + whileNode.LineNumber +" LOOP STALLING PROGRAM, EXCEEDED 10000 ITERATIONS")
     ]
       
-    let [, consequenceErr] = Evaluate(whileNode.Consequence, Environment)
+    let [consequence, consequenceErr] = Evaluate(whileNode.Consequence, Environment)
     if (consequenceErr != null) return [null, consequenceErr]
+    if (consequence.Type == TOKENS.RETURN) return [consequence, null]
 
     let [satisfied, satisfiedErr] = Evaluate(whileNode.Condition, Environment)
     if (satisfiedErr != null) return [null, satisfiedErr]
@@ -78,15 +160,17 @@ function If(ifNode, Environment) {
     if (condition.Value == 1) {
       isSatisfied = true
       //TODO  HANDLE returns from functions inside if statements
-      let [, evalErr] = Evaluate(ifNode.Conditionals[index][1], Environment)
+      let [eval, evalErr] = Evaluate(ifNode.Conditionals[index][1], Environment)
       if (evalErr != null) return [null, evalErr]
+      if (eval.Type == TOKENS.RETURN) return [eval, null]
     }
      index++
   }
 
-  if (!isSatisfied) {
-    let [, evalErr] = Evaluate(ifNode.Alternative, Environment)
+  if (!isSatisfied && ifNode.Alternative != null) {
+    let [eval, evalErr] = Evaluate(ifNode.Alternative, Environment)
     if (evalErr != null) return [null, evalErr]
+    if (eval.Type == TOKENS.RETURN) return [eval, null]
   }
 
   return [new Null(), null]
@@ -115,10 +199,17 @@ function Assign(assignNode, Environment) {
   let [Right, RightErr] = Evaluate(assignNode.Right, Environment)
   if (RightErr != null) return [null, RightErr]
 
+
+
   if (assignNode.Left.Type == TOKENS.IDENTIFIER) {
     if (assignNode.Scope == TOKENS.LOCAL) {
       Environment.Local[assignNode.Left.Identifier] = Right
     } else {
+      if (Environment.Local[assignNode.Left.Identifier] != null) {
+        Environment.Local[assignNode.Left.Identifier] = Right
+        return [new Null(assignNode.LineNumber), null]
+      }
+
       Environment.Global[assignNode.Left.Identifier] = Right
     }
   }
@@ -133,9 +224,13 @@ function Program(programNode, Environment) {
     [result, err] = Evaluate(programNode.Nodes[i], Environment)
     if (err != null) return [null, err]
     if (result.Type != TOKENS.NULL) console.log(result)
-    
   }
-  return [result, err]
+
+  if (result.Type == TOKENS.RETURN) {
+    return [result.Expression, null]
+  }
+
+  return [new Null(), null]
 }
 
 function UnaryOperation(unaryNode, Environment) {
