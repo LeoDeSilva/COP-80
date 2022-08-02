@@ -1,4 +1,5 @@
 const { TOKENS, Error, Token } = require("../Lexer/tokens");
+const { PREDEFINED_FUNCTIONS } = require("./predefined.js")
 
 const {
   Number,
@@ -40,41 +41,49 @@ function Evaluate(node, Environment) {
       return ReturnWrapper(node, Environment)
 
     case TOKENS.NUMBER:
-      return [new Number(node.LineNumber, node.Value), null]
+      return [new Number(node.Value), null]
 
     case TOKENS.STRING:
-      return [new String(node.LineNumber, node.Value), null]
+      return [new String(node.Value), null]
 
 
     case TOKENS.PROGRAM:
       return Program(node, Environment)
   }
 
-  return [null, new Error("EVAL_ERROR: TOKEN " + node.Type + " NOT IMPLEMENTED")]
+  return [null, new Error("EVAL_ERROR LINE " + node.LineNumber + ", TOKEN " + node.Type + " NOT IMPLEMENTED")]
 }
 
 function ReturnWrapper(returnNode, Environment) {
   let [expression, expressionErr] = Evaluate(returnNode.Expression, Environment)
   if (expressionErr != null) return [null, expressionErr]
-  return [new Return(returnNode.LineNumber, expression), null]
+  return [new Return(expression), null]
 }
 
 function Invoke(invokeNode, Environment) {
   let [func, funcErr] = Evaluate(invokeNode.Function, Environment) 
   if (funcErr != null) return [null, funcErr]
 
+
   let [args, argErr] = evalArguments(invokeNode.Arguments, Environment)
   if (argErr != null) return [null, argErr]
+
+  if (func.Type == TOKENS.PREDEFINED) {
+    return func.Fn(invokeNode.LineNumber, args, Environment) // possibly enclosedEnvironment
+  }
 
   let [enclosedEnvironment, envErr] = extendEnvironment(Environment, args, func) 
   if (envErr != null) return [null, envErr]
 
   //POSSIBLY WRAP RETURN VALUE
-  return Evaluate(func.Body, enclosedEnvironment)
+  let [returnValue, returnErr] = Evaluate(func.Body, enclosedEnvironment)
+  if (returnErr != null) return [null, returnErr]
+  if (returnValue.Type == TOKENS.RETURN) return [returnValue.Expression, null]
+  return [new Null(), null]
 }
 
 function extendEnvironment(wrapper, args, func) {
-  let enclosed = CreateEnvironment()
+  let enclosed = CreateEnvironment(wrapper.Kernel)
   enclosed.Global = wrapper.Global
 
   if (args.length > func.Parameters.length) {
@@ -113,7 +122,6 @@ function FunctionDeclaration(functionNode, Environment) {
   ]
   
   Environment.Global[functionNode.Identifier.Identifier] = new Function(
-    functionNode.LineNumber, 
     functionNode.Parameters, 
     functionNode.Body
   )  
@@ -178,8 +186,9 @@ function If(ifNode, Environment) {
 
 function Identifier(identifierNode, Environment) {
   let [value, err] = [null, null]
-
-  if (Environment.Local[identifierNode.Identifier] != null) {
+  if (PREDEFINED_FUNCTIONS[identifierNode.Identifier] != null) {
+    value = PREDEFINED_FUNCTIONS[identifierNode.Identifier]
+  } else if (Environment.Local[identifierNode.Identifier] != null) {
     value = Environment.Local[identifierNode.Identifier]
 
   } else if (Environment.Global[identifierNode.Identifier] != null) {
@@ -207,14 +216,14 @@ function Assign(assignNode, Environment) {
     } else {
       if (Environment.Local[assignNode.Left.Identifier] != null) {
         Environment.Local[assignNode.Left.Identifier] = Right
-        return [new Null(assignNode.LineNumber), null]
+        return [new Null(), null]
       }
 
       Environment.Global[assignNode.Left.Identifier] = Right
     }
   }
 
-  return [new Null(assignNode.LineNumber), null]
+  return [new Null(), null]
 }
 
 // evaluate all sub nodes and return last value
@@ -223,11 +232,11 @@ function Program(programNode, Environment) {
   for (let i = 0; i < programNode.Nodes.length; i++) {
     [result, err] = Evaluate(programNode.Nodes[i], Environment)
     if (err != null) return [null, err]
-    if (result.Type != TOKENS.NULL) console.log(result)
-  }
 
-  if (result.Type == TOKENS.RETURN) {
-    return [result.Expression, null]
+    if (result.Type == TOKENS.RETURN) 
+        return [result, null]
+
+    //if (result.Type != TOKENS.NULL) console.log(result)
   }
 
   return [new Null(), null]

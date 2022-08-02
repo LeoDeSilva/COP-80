@@ -1,46 +1,51 @@
 const { TOKENS, Error } = require("../Lexer/tokens.js")
 
-function CreateEnvironment() {
-  return new Environment()
+function CreateEnvironment(Kernel) {
+  return new Environment(Kernel)
 }
-
 
 // Store variables, functions etc. - refresh every program run
 class Environment {
-  constructor() {
+  constructor(Kernel) {
     this.Global = {
       TRUE: new Number(0,1),
       FALSE: new Number(0,0),
     }
     this.Local = {}
-    this.Functions = {}
+    this.Kernel = Kernel
   }
 }
 
 //Wrapper for all objects
 class Object {
-  constructor(LineNumber, Type) {
-    this.LineNumber = LineNumber
+  constructor(Type) {
     this.Type = Type
+  }
+}
+
+class Predefined extends Object {
+  constructor(Fn) {
+    super(TOKENS.PREDEFINED)
+    this.Fn = Fn
   }
 }
 
 class Null extends Object {
   constructor(LineNumber) {
-    super(LineNumber, TOKENS.NULL)
+    super(TOKENS.NULL)
   }
 }
 
 class Return extends Object {
-  constructor(LineNumber, Expression) {
-    super(LineNumber, TOKENS.RETURN)
+  constructor(Expression) {
+    super(TOKENS.RETURN)
     this.Expression = Expression
   }
 }
 
 class Function extends Object {
-  constructor(LineNumber, Parameters, Body) {
-    super(LineNumber, TOKENS.FUNCTION)
+  constructor(Parameters, Body) {
+    super(TOKENS.FUNCTION)
     this.Parameters = Parameters
     this.Body = Body
   }
@@ -48,8 +53,8 @@ class Function extends Object {
 
 // Wrapper for base types that can undergo operations (e.g. String or Integer)
 class Atom extends Object {
-  constructor(LineNumber, Type, Value) {
-    super(LineNumber, Type)
+  constructor(Type, Value) {
+    super(Type)
     this.Value = Value
   }
 
@@ -59,7 +64,7 @@ class Atom extends Object {
     switch (operation) {
       case TOKENS.SUB:
         if (this.Type != TOKENS.NUMBER) {
-          err = new Error("Line " + this.LineNumber + " CANNOT NEGATE STRING")
+          err = new Error("Line " + Right.LineNumber + " CANNOT NEGATE STRING")
           break
         }
 
@@ -84,7 +89,7 @@ class Atom extends Object {
       case TOKENS.SUB:
         if (this.Type != TOKENS.NUMBER) {
           err = new Error(
-            "Line " + this.LineNumber + " CANNOT SUBTRACT STRINGS: " 
+            "Line " + Right.LineNumber + " CANNOT SUBTRACT STRINGS: " 
             + this.Value + " - " + Right.Value)
           break
         }
@@ -93,7 +98,7 @@ class Atom extends Object {
       case TOKENS.MUL:
         if (this.Type != TOKENS.NUMBER) {
           err = new Error(
-            "Line " + this.LineNumber + " CANNOT MULTIPLY STRINGS: " 
+            "Line " + Right.LineNumber + " CANNOT MULTIPLY STRINGS: " 
             + this.Value + " * " + Right.Value)
           break
         }
@@ -102,7 +107,7 @@ class Atom extends Object {
       case TOKENS.DIV:
         if (this.Type != TOKENS.NUMBER) {
           err = new Error(
-            "Line " + this.LineNumber + " CANNOT DIVIDE STRINGS: " 
+            "Line " + Right.LineNumber + " CANNOT DIVIDE STRINGS: " 
             + this.Value + " / " + Right.Value)
           break
         }
@@ -112,7 +117,7 @@ class Atom extends Object {
       case TOKENS.MOD:
         if (this.Type != TOKENS.NUMBER) {
           err = new Error(
-            "Line " + this.LineNumber + " CANNOT MODULO STRING: " 
+            "Line " + Right.LineNumber + " CANNOT MODULO STRING: " 
             + this.Value + " % " + Right.Value)
           break
         }
@@ -121,7 +126,7 @@ class Atom extends Object {
       case TOKENS.POW:
         if (this.Type != TOKENS.NUMBER) {
           err = new Error(
-            "Line " + this.LineNumber + " CANNOT USE STRING AS EXPONENTIAL: " 
+            "Line " + Right.LineNumber + " CANNOT USE STRING AS EXPONENTIAL: " 
             + this.Value + " ^ " + Right.Value)
           break
         }
@@ -150,12 +155,10 @@ class Atom extends Object {
         break;
 
       case TOKENS.AND:
-        console.log(this.Value == 1 && Right.Value == 1)
         result = (this.Value == 1 && Right.Value == 1) ? 1 : 0
         break;
 
       case TOKENS.OR:
-        console.log(this.Value == 1 || Right.Value == 1)
         result = (this.Value == 1 || Right.Value == 1) ? 1 : 0
         break;
     }
@@ -164,38 +167,38 @@ class Atom extends Object {
 }
 
 class String extends Atom {
-  constructor(LineNumber, Value) {
-    super(LineNumber, TOKENS.STRING, Value)
+  constructor(Value) {
+    super(TOKENS.STRING, Value)
   }
 
   UnaryOperation(operation) { // wrapper for RawUnaryOperation
     let [result, err] = super.RawUnaryOperation(operation)
     if (err != null) return [null, err]
-    return [new String(this.LineNumber, result), null]
+    return [new String(result), null]
   }
 
   BinaryOperation(operation, Right) {
     let [result, err] = super.RawBinaryOperation(operation, Right)
     if (err != null) return [null, err]
-    return [new String(this.LineNumber, result), null]
+    return [new String(result), null]
   }
 }
 
 class Number extends Atom {
-  constructor(LineNumber, Value) {
-    super(LineNumber, TOKENS.NUMBER, Value)
+  constructor(Value) {
+    super(TOKENS.NUMBER, Value)
   }
 
   UnaryOperation(operation) {
     let [result, err] = super.RawUnaryOperation(operation)
     if (err != null) return [null, err]
-    return [new Number(this.LineNumber, result), null]
+    return [new Number(result), null]
   }
 
   BinaryOperation(operation, Right) {
     let [result, err] = super.RawBinaryOperation(operation, Right)
     if (err != null) return [null, err]
-    return [new Number(this.LineNumber, result), null]
+    return [new Number(result), null]
   }
 }
 
@@ -204,6 +207,7 @@ module.exports = {
   Number,
   String,
   Function,
+  Predefined,
   Return,
   Null,
 }
