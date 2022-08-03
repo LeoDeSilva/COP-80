@@ -15,7 +15,9 @@ class KeyboardChip {
   }
 
   isPressed(key) {
-    return this.pressedKeys[key];
+    let pressed = this.pressedKeys[key];
+    if (pressed == undefined) pressed = false
+    return pressed ? 1 : 0
   }
 
   handleKey() {

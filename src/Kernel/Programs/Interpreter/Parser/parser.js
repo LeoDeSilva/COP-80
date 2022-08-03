@@ -47,9 +47,9 @@ class Parser {
 
       let [node, err] = this.parseExpression();
       if (err != null) return [null, err];
-      if (![TOKENS.NEW_LINE, TOKENS.EOF].includes(this.token.Type)) {
-         return [null, new Error("SYNTAX_ERROR: EXPECTING NEW LINE AT LINE " + this.lineNumber)];
-      } 
+      //if (![TOKENS.NEW_LINE, TOKENS.EOF].includes(this.token.Type)) {
+      //   return [null, new Error("SYNTAX_ERROR: EXPECTING NEW LINE AT LINE " + this.lineNumber)];
+      //} 
       this.advance()
       AST.Nodes.push(node);
     }
@@ -184,7 +184,7 @@ class Parser {
     if (consequenceErr != null) return [null, consequenceErr]
 
     this.advance()
-    return [new WhileNode(this.LineNumber, condition, consequence), null]
+    return [new WhileNode(this.lineNumber, condition, consequence), null]
   }
 
   parseIf() { 
@@ -229,6 +229,7 @@ class Parser {
         null, 
         new Error("SYNTAX ERROR LINE " + this.token.LineNumber + ", EXPECTED END AFTER IF STATEMENT")
       ]
+
       //if ([TOKENS.NEW_LINE, TOKENS.EOF].includes(this.token.Type)) {
       if (this.token.Type == TOKENS.NEW_LINE) {
         this.advance();
@@ -237,10 +238,10 @@ class Parser {
 
       let [node, err] = this.parseExpression();
       if (err != null) return [null, err];
-      if (![TOKENS.NEW_LINE, TOKENS.EOF].includes(this.token.Type)) {
-         return [null, new Error("SYNTAX_ERROR: EXPECTING NEW LINE AT LINE " + this.lineNumber)];
-      } 
-      this.advance()
+      //if (![TOKENS.NEW_LINE, TOKENS.EOF].includes(this.token.Type)) {
+       //  return [null, new Error("SYNTAX_ERROR: EXPECTING NEW LINE AT LINE " + this.lineNumber)];
+      //} 
+      //this.advance()
       Block.Nodes.push(node);
     }
     return [Block, null];
@@ -323,7 +324,7 @@ class Parser {
         let [args, argErr] = this.parseArguments() 
         if (argErr != null) return [null, argErr]
         this.advance()
-        return [new InvokeNode(this.LineNumber, node, args), null]
+        return [new InvokeNode(this.lineNumber, node, args), null]
     }
     
     return [node, null]

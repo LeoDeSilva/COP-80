@@ -57,6 +57,7 @@ module.exports = {
     BINARY_OP: "BINARY_OP",
     UNARY_OP: "UNARY_OP",
     ASSIGN: "ASSIGN",
+    PREDEFINED: "PREDEFINED",
 
       
     //DATA TYPES

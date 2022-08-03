@@ -2,6 +2,8 @@ const { Editor } = require("../Editor/Editor");
 const { Interpreter } = require("../Interpreter/interpreter");
 const { Lexer } = require("../Interpreter/Lexer/lexer");
 const { Parser } = require("../Interpreter/Parser/parser");
+const { Evaluate } = require("../Interpreter/Evaluator/evaluator")
+const { CreateEnvironment } = require("../Interpreter/Evaluator/objects")
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const DIGITS = "1234567890";
@@ -35,11 +37,19 @@ function Run(Terminal) {
     Terminal.appendHistory("string", parserErr.msg, 14);
     return;
   }
-  console.log(ast)
 
-  //TODO: Interpret and Parse in terminal, execute in seperate program
-  Terminal.Kernel.Load(new Interpreter(Terminal.Kernel, ast));
-  Terminal.Kernel.lastProgram = Terminal;
+  let env = CreateEnvironment(Terminal.Kernel)
+  let [result, evaluatorErr] = Evaluate(ast, env)
+  if (evaluatorErr != null) {
+    Terminal.appendHistory("string", evaluatorErr.msg, 14);
+    return;
+  }
+
+  if (env.Global["_UPDATE"] && env.Global["_UPDATE"].Type == "FUNCTION") {
+    //Terminal.Kernel.Load(new Interpreter(Terminal.Kernel, ast));
+    Terminal.Kernel.Load(new Interpreter(Terminal.Kernel, env));
+    Terminal.Kernel.lastProgram = Terminal;
+  }
 }
 
 function Touch(Terminal) {
