@@ -169,11 +169,32 @@ class Lexer {
   lexNumber() {
     //TODO: HANDLE FLOATING POINTS
     let number = "";
-    while (DIGITS.includes(this.char)) {
+    while ((DIGITS + ".").includes(this.char)) {
       number += this.char;
       this.advance();
     }
-    return [new Token(TOKENS.NUMBER, number, this.lineNumber), null];
+
+    let [validated, validatedErr] = this.validateNumber(number)
+    if (validatedErr != null) return [null, validatedErr]
+    return [new Token(TOKENS.NUMBER, validated, this.lineNumber), null];
+  }
+
+  validateNumber(number) {
+    // IF MORE THAN ONE '.' -> ERR
+    if (number.split(".").length - 1 > 1) {
+      return [
+        number, 
+        new Error("SYNTAX ERROR, LINE " + this.lineNumber + " > 1 '.' IN NUMBER: " + number)
+      ]
+    } else if (number[number.length - 1] == ".") {
+    // IF LAST NUMBER = '.' -> ERR
+      return [
+        number, 
+        new Error("SYNTAX ERROR, LINE " + this.lineNumber + " DECIMAL PLACE TERMINATING NUMBER:" + number)
+      ]
+    }
+    
+    return [number, null]
   }
 
   lexIdentifier() {

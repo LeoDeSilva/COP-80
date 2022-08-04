@@ -198,7 +198,8 @@ class Number extends Atom {
   BinaryOperation(operation, Right) {
     let [result, err] = super.RawBinaryOperation(operation, Right)
     if (err != null) return [null, err]
-    return [new Number(result), null]
+
+    return [new Number(parseFloat(result.toFixed(12))), null]
   }
 }
 

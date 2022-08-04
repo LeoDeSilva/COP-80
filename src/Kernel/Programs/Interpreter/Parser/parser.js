@@ -291,6 +291,9 @@ class Parser {
 
       case TOKENS.NUMBER:
         let numberValue = parseInt(this.token.Literal);
+        //if (this.token.Literal.match(/./g) || []).length == 1) parseFloat(this.token.Literal);
+        if (this.token.Literal.split(".").length - 1 == 1) numberValue = parseFloat(this.token.Literal); 
+
         this.advance();
         return [new NumberNode(this.lineNumber, numberValue), null];
 

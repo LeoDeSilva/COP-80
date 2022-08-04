@@ -24,6 +24,10 @@ function len(LineNumber, args, Environment) {
   return [new Number(args[0].Value.length), null]
 }
 
+function rnd(LineNumber, args, Environment) {
+
+}
+
 function btn(LineNumber, args, Environment) {
   if (args.length != 1) return checkLength(LineNumber, "BTN", 1, args)
   if (args[0].Type != TOKENS.STRING) return checkArgument(LineNumber, "BTN", 0, TOKENS.STRING, args)
@@ -55,7 +59,7 @@ function joinArguments(LineNumber, args) {
   for (let i = 0; i < args.length; i++) {
     switch(args[i].Type) {
       case TOKENS.NUMBER:
-        str += args[i].Value.toString()
+        str += parseFloat(args[i].Value.toFixed(12)).toString()
         break
       case TOKENS.STRING:
         str += args[i].Value
@@ -116,9 +120,9 @@ function rect(LineNumber, args, Environment) {
 function set(LineNumber, args, Environment) {
   if (args.length != 3) return checkLength(LineNumber, "SET", 3, args)  
 
-  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "RECT", 0, TOKENS.NUMBER, args)
-  if (args[1].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "RECT", 1, TOKENS.NUMBER, args)
-  if (args[2].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "RECT", 2, TOKENS.NUMBER, args)
+  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "SET", 0, TOKENS.NUMBER, args)
+  if (args[1].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "SET", 1, TOKENS.NUMBER, args)
+  if (args[2].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "SET", 2, TOKENS.NUMBER, args)
 
   if (args[2].Value > 15) return [
     null,
@@ -131,7 +135,7 @@ function set(LineNumber, args, Environment) {
 
 function fill(LineNumber, args, Environment) {
   if (args.length != 1) return checkLength(LineNumber, "FILL", 1, args)  
-  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "TEXT", 0, TOKENS.NUMBER, args)
+  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "FILL", 0, TOKENS.NUMBER, args)
 
   if (args[0].Value > 15) return [
     null,
