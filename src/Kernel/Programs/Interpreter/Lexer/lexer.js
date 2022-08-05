@@ -27,14 +27,12 @@ class Lexer {
     return this.fileString[this.readIndex];
   }
 
-  Lex() {
-    console.log(this.fileString)
-    
+  Lex(ignore) {
     let tokens = [];
     while (this.char != TOKENS.EOF) {
       // LOOP UNTIL EOF : "" = placeholder for EOF
       let [tok, err] = this.lexAhead();
-      if (err != null) return [[], err]
+      if (err != null && !ignore) return [tokens, err]
       tokens.push(tok);
     }
     tokens.push(new Token(TOKENS.EOF, "EOF", this.lineNumber));
@@ -104,9 +102,17 @@ class Lexer {
         break;
 
       case "\n":
-          token = new Token(TOKENS.NEW_LINE, "/n", this.lineNumber)
-          this.lineNumber++;
-          break
+        token = new Token(TOKENS.NEW_LINE, "\n", this.lineNumber)
+        this.lineNumber++;
+        break
+
+      case "\t":
+        token = new Token(TOKENS.TAB, "\t", this.lineNumber)
+        break;
+
+      case " ":
+        token = new Token(TOKENS.SPACE, " ", this.lineNumber)
+        break;
 
       case ";": //TODO: REMOVE IF NOT USING SEMI's
         token = new Token(TOKENS.SEMICOLON, this.char, this.lineNumber);
@@ -151,7 +157,8 @@ class Lexer {
   }
 
   eatWhitespace() {
-    while ([" ", "\t", "\r"].includes(this.char)) {
+    while (["\r"].includes(this.char)) {
+    //while ([" ", "\t", "\r"].includes(this.char)) {
       //if (this.char == "\n") this.lineNumber++;
       this.advance();
     }
@@ -175,7 +182,7 @@ class Lexer {
     }
 
     let [validated, validatedErr] = this.validateNumber(number)
-    if (validatedErr != null) return [null, validatedErr]
+    if (validatedErr != null) return [validated, validatedErr]
     return [new Token(TOKENS.NUMBER, validated, this.lineNumber), null];
   }
 
@@ -209,13 +216,13 @@ class Lexer {
 
   lexString(terminator) {
     this.advance();
-    let lexedString = "";
+    let lexedString = "\"";
 
     while (this.char != terminator) {
-      if (this.char == "")
+      if (this.char == "EOF")
         // IF EOF w/o string terminating:
         return [
-          null,
+          new Token(TOKENS.STRING, lexedString, this.lineNumber),
           new Error(
             "SYNTAX ERROR LINE " +
               this.lineNumber +
@@ -228,6 +235,7 @@ class Lexer {
       this.advance();
     }
 
+    lexedString += "\""
     //this.advance();
     return [new Token(TOKENS.STRING, lexedString, this.lineNumber), null];
   }

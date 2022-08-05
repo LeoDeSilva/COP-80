@@ -24,8 +24,18 @@ function len(LineNumber, args, Environment) {
   return [new Number(args[0].Value.length), null]
 }
 
-function rnd(LineNumber, args, Environment) {
+function flr(LineNumber, args, Environment) {
+  if (args.length != 1) return checkLength(LineNumber, "FLR", 1, args)
+  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "FLR", 0, TOKENS.NUMBER, args)
 
+  return [new Number(Math.floor(args[0].Value)), null]
+}
+
+function rnd(LineNumber, args, Environment) {
+  if (args.length != 1) return checkLength(LineNumber, "RND", 1, args)
+  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "RND", 0, TOKENS.NUMBER, args)
+
+  return [new Number(Math.random() * args[0].Value), null]
 }
 
 function btn(LineNumber, args, Environment) {
@@ -94,7 +104,7 @@ function text(LineNumber, args, Environment) {
 
   let msg = args[0].Value
   if (args[0].Type == TOKENS.NUMBER) msg = msg.toString()
-  Environment.Kernel.FontChip.BlitText(Environment.Kernel.DisplayChip, msg, args[1].Value, args[2].Value, args[3].Value)
+  Environment.Kernel.FontChip.BlitText(Environment.Kernel.DisplayChip, msg, Math.floor(args[1].Value), Math.floor(args[2].Value), args[3].Value)
 
   return [new Null(), null]
 }
@@ -113,7 +123,7 @@ function rect(LineNumber, args, Environment) {
     new Error("LINE " + LineNumber + " COLOUR CODE GREATER THAN 16, GOT: " + args[4].Value)
   ]
 
-  Environment.Kernel.DisplayChip.Rect(args[0].Value, args[1].Value, args[2].Value, args[3].Value, args[4].Value) 
+  Environment.Kernel.DisplayChip.Rect(Math.floor(args[0].Value), Math.floor(args[1].Value), Math.floor(args[2].Value), Math.floor(args[3].Value), args[4].Value) 
   return [new Null(), null]
 }
 
@@ -129,7 +139,7 @@ function set(LineNumber, args, Environment) {
     new Error("LINE " + LineNumber + " COLOUR CODE GREATER THAN 16, GOT: " + args[2].Value)
   ]
    
-  Environment.Kernel.DisplayChip.setPixel(args[0].Value, args[1].Value, args[2].Value)
+  Environment.Kernel.DisplayChip.setPixel(Math.floor(args[0].Value), Math.floor(args[1].Value), args[2].Value)
   return [new Null(), null]
 }
 
@@ -155,5 +165,7 @@ module.exports = {
     "RECT": new Predefined(rect),
     "SET": new Predefined(set),
     "BTN": new Predefined(btn),
+    "FLR": new Predefined(flr),
+    "RND": new Predefined(rnd),
   }
 }

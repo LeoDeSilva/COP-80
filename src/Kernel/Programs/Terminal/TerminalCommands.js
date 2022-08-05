@@ -24,12 +24,16 @@ function Run(Terminal) {
   }
 
   let lexer = new Lexer(file.FileData);
-  let [tokens, lexerErr] = lexer.Lex();
+  let [tokens, lexerErr] = lexer.Lex(false);
 
   if (lexerErr != null) {
     Terminal.appendHistory("string", lexerErr.msg, 14);
     return;
   }
+
+  tokens = tokens.filter(function(tok) {
+    return !(["SPACE", "TAB"].includes(tok.Type))
+  })
 
   let parser = new Parser(tokens);
   let [ast, parserErr] = parser.Parse();
@@ -234,10 +238,12 @@ function Welcome(Terminal) {
       type: "function",
       content: (Kernel, y) => {
         // return Kernel.Icons["welcome"].Blit(Kernel.DisplayChip, 0, 0);
-        Kernel.Icons["cop-80-icon"].Blit(Kernel.DisplayChip, 0, y);
+        //Kernel.Icons["cop-80-icon"].Blit(Kernel.DisplayChip, 0, y);
+        //Kernel.DisplayChip.Rect(0, 6, 32, 1, 8)
+        //Kernel.DisplayChip.Rect(0, 8, 32, 1, 8)
         return Kernel.Icons["cop-80"].Blit(
           Kernel.DisplayChip,
-          Kernel.Icons["cop-80-icon"].width + 1,
+          0,
           y
         );
       },
@@ -245,7 +251,7 @@ function Welcome(Terminal) {
     },
     {
       type: "string",
-      content: "Fantasy Console",
+      content: "FANTASY CONSOLE",
       colour: 6,
     },
     {

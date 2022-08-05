@@ -87,10 +87,12 @@ module.exports = {
 
     AND: "AND",
     OR: "OR",
-    
+
     //UNPRINTABLES
     EOF: "EOF",
     NEW_LINE: "NEW_LINE",
+    TAB: "TAB",
+    SPACE: "SPACE",
     NULL: "NULL",
 
     // BRACKETS
@@ -128,5 +130,6 @@ module.exports = {
   Error,
   LETTERS,
   DIGITS,
+  KEYWORDS,
   lookupIdentifier,
 };

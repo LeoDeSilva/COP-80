@@ -1,3 +1,7 @@
+ const {Lexer} = require("../Interpreter/Lexer/lexer.js")
+const {TOKENS, KEYWORDS} = require("../Interpreter/Lexer/tokens.js")
+const {PREDEFINED_FUNCTIONS} = require("../Interpreter/Evaluator/predefined.js")
+
 class Editor {
   constructor(Kernel, fileName) {
     this.Kernel = Kernel;
@@ -20,9 +24,15 @@ class Editor {
 
     this.backgroundColour = 0;
     this.foregroundColour = 7;
+
+    this.tokens = []
   }
 
-  Start() {}
+  Start() {
+    let lexer = new Lexer(this.fileData)
+    let [tokens, err] = lexer.Lex(true)
+    this.tokens = tokens
+  }
 
   Update() {
     if (this.Kernel.loadedProgram != this) return;
@@ -37,17 +47,21 @@ class Editor {
 
     if (cursorX < 3) this.drawStartX += 4; // LEFT OF SCREEN
     if (cursorX + 4 > 128) this.drawStartX -= 4; // RIGHT OF SCREEN
-    console.log(this.drawStartX);
 
     // DISPLAY FILE TEXT
-    this.Kernel.FontChip.BlitText(
-      this.Kernel.DisplayChip,
-      this.fileData,
-      this.drawStartX,
-      this.drawStartY,
-      this.foregroundColour,
-      true
-    );
+    if (this.fileName.split(".")[this.fileName.split(".").length - 1] == "COP") {
+      this.syntaxHighlighting()
+    } else {
+      this.Kernel.FontChip.BlitText(
+        this.Kernel.DisplayChip,
+        this.fileData,
+        this.drawStartX,
+        this.drawStartY,
+        this.foregroundColour,
+        true
+      );
+    }
+
 
     this.drawCursor(this.drawStartX, this.drawStartY);
 
@@ -57,10 +71,10 @@ class Editor {
     this.Kernel.DisplayChip.Rect(0, 1, 128, 1, this.backgroundColour);
 
     // SCREEN BORDER - RENDERED ON TOP OF TEXT (HENCE BELOW)
-    this.Kernel.DisplayChip.Rect(0, 127, 128, 1, this.foregroundColour);
-    this.Kernel.DisplayChip.Rect(0, 0, 128, 1, this.foregroundColour);
-    this.Kernel.DisplayChip.Rect(0, 0, 1, 128, this.foregroundColour);
-    this.Kernel.DisplayChip.Rect(127, 0, 1, 128, this.foregroundColour);
+    //this.Kernel.DisplayChip.Rect(0, 127, 128, 1, this.foregroundColour);
+    //this.Kernel.DisplayChip.Rect(0, 0, 128, 1, this.foregroundColour);
+    //this.Kernel.DisplayChip.Rect(0, 0, 1, 128, this.foregroundColour);
+    //this.Kernel.DisplayChip.Rect(127, 0, 1, 128, this.foregroundColour);
 
     this.Kernel.FontChip.BlitText(
       this.Kernel.DisplayChip,
@@ -69,6 +83,45 @@ class Editor {
       3,
       this.backgroundColour
     );
+  }
+
+  syntaxHighlighting() {
+    let [tokX, tokY] = [0, 0]
+    let x = this.drawStartX
+    let y = this.drawStartY
+
+    for (let i = 0; i < this.tokens.length; i++) {
+      if (this.tokens[i] == null || this.tokens[i].Type == TOKENS.EOF) continue
+      let colour = 7
+
+      switch (this.tokens[i].Type) {
+        case TOKENS.STRING:
+        case TOKENS.NUMBER:
+          colour = 12
+          break;
+        case TOKENS.IDENTIFIER:
+          colour = 6
+          break
+        default:
+          if (KEYWORDS[this.tokens[i].Type] != null)
+            colour = 14
+          if (PREDEFINED_FUNCTIONS[this.tokens[i].Literal] != null) 
+            colour = 15
+      }
+
+      [tokX, tokY] = this.Kernel.FontChip.BlitText(
+        this.Kernel.DisplayChip,
+        this.tokens[i].Literal,
+        x, y, colour, true
+      )
+
+      x += tokX 
+
+      if (this.tokens[i].Type == TOKENS.NEW_LINE) {
+        x = this.drawStartX
+        y += 6
+      }
+    }
   }
 
   Save() {
@@ -117,6 +170,12 @@ class Editor {
         this.insertKey("\n");
         break;
 
+      case "\"":
+        this.insertKey("\"");
+        this.insertKey("\"");
+        this.cursorIndex--
+        break;
+
       default:
         // IF A FONT CHAR EXISTS
         if (this.Kernel.FontChip.FONT[key] != null) {
@@ -124,6 +183,10 @@ class Editor {
         }
         break;
     }
+
+    let lexer = new Lexer(this.fileData)
+    let [tokens, err] = lexer.Lex(true)
+    this.tokens = tokens
   }
 
   getCursorXY(x, y) {

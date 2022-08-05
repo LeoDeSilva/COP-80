@@ -33,6 +33,7 @@ class Parser {
 
   peek() {
     if (this.index + 1 >= this.tokens.length) return new Token(TOKENS.EOF, "");
+    //if ([TOKENS.TAB, TOKENS.SPACE].includes(this.tokens[this.index + 1].Type)) this.advance()
     return this.tokens[this.index + 1];
   }
 
@@ -300,7 +301,7 @@ class Parser {
       case TOKENS.STRING:
         let stringValue = this.token.Literal
         this.advance()
-        return [new StringNode(this.lineNumber, stringValue), null]
+        return [new StringNode(this.lineNumber, stringValue.slice(1,-1)), null]
 
       case TOKENS.IDENTIFIER:
         let identifier = this.token.Literal
@@ -370,7 +371,6 @@ class Parser {
 
   parseInfix(left, operation) {
     if (!BIN_OPERATIONS.includes(operation)) {
-       console.log("err")
       return [
         null,
         new Error(

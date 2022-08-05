@@ -199,6 +199,8 @@ class Number extends Atom {
     let [result, err] = super.RawBinaryOperation(operation, Right)
     if (err != null) return [null, err]
 
+    // parseFloat(result.toFixed(12)) deals with the nasty floating point math by effectively rounding 10.299999999999999999999 to 10.3
+    // however this means it can only deal with floating points up to 12 digits
     return [new Number(parseFloat(result.toFixed(12))), null]
   }
 }
