@@ -217,6 +217,40 @@ function insert(LineNumber, args, Environment) {
   ]
 }
 
+function range(LineNumber, args, Environment) {
+  if (args.length > 3 || args.length < 1) return [
+    null,
+    new Error("LINE " + LineNumber + " EXPECTED 1, 2 OR 3 ARGS WHEN CALLING RANGE, GOT: " + args.length)
+  ]
+
+  let start = 0
+  let stop = 0
+  let step = 1
+
+  if (args.length >= 1) {
+    if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "RANGE", 0, TOKENS.NUMBER, args)
+    stop = args[0].Value
+  }
+  
+  if (args.length >= 2){
+    if (args[1].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "RANGE", 1, TOKENS.NUMBER, args)
+    start = args[0].Value
+    stop = args[1].Value
+  }
+
+  if (args.length == 3) {
+    if (args[2].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "RANGE", 2, TOKENS.NUMBER, args)
+    step = args[2].Value
+  }
+
+  let array = []
+  for (let i = start; step > 0 ? i < stop : i > stop; i += step) {
+    array.push(new Number(i))
+  }
+  
+  return [new Array(array), null]
+}
+
 module.exports = {
   PREDEFINED_FUNCTIONS: {
     "LEN": new Predefined(len),
@@ -233,5 +267,6 @@ module.exports = {
     "REMOVE": new Predefined(remove),
     "POP": new Predefined(pop),
     "INSERT": new Predefined(insert),
+    "RANGE": new Predefined(range),
   }
 }
