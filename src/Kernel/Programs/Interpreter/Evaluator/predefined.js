@@ -1,6 +1,6 @@
 const { TOKENS, Error } = require("../Lexer/tokens.js")
 
-const { Predefined, Null, Number } = require("./objects.js");
+const { Predefined, Null, Number, Array} = require("./objects.js");
 
 function checkArgument(LineNumber, Identifier, Index, Type, Args) {
   return [
@@ -79,10 +79,6 @@ function joinArguments(LineNumber, args, join=" ") {
         str += parseFloat(args[i].Value.toFixed(12)).toString()
         break
       case TOKENS.ARRAY:
-        //str += args[i].Elements.map(function(obj) {
-        //  return obj.Value
-        //})
-
         let [elementStr, elementErr] = joinArguments(LineNumber, args[i].Elements, ",")
         if (elementErr != null) return [null, elementErr]
         str += "[" + elementStr + "]"
@@ -172,6 +168,59 @@ function fill(LineNumber, args, Environment) {
   return [new Null(), null]
 }
 
+function push(LineNumber, args, Environment) {
+  if (args.length != 2) return checkLength(LineNumber, "PUSH", 2, args)  
+  if (args[0].Type != TOKENS.ARRAY) return checkArgument(LineNumber, "PUSH", 0, TOKENS.ARRAY, args)
+  return [new Array([].concat(args[0].Elements, args[1])), null] 
+}
+
+function remove(LineNumber, args, Environment) {
+  if (args.length != 2) return checkLength(LineNumber, "REMOVE", 1, args)  
+  if (args[0].Type != TOKENS.ARRAY) return checkArgument(LineNumber, "REMOVE", 0, TOKENS.ARRAY, args)
+  if (args[1].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "REMOVE", 1, TOKENS.NUMBER, args)
+
+  if (args[1].Value >= args[0].Elements.length) return [
+    null,
+    new Error("LINE " + LineNumber + " REMOVE INDEX OUT OF RANGE: " + args[1].Value)
+  ]
+
+  return [new Array(
+    args[0].Elements.slice(0,args[1].Value
+    ).concat(
+      args[0].Elements.slice(
+        args[1].Value + 1)
+    )), 
+    null
+  ] 
+}
+
+function pop(LineNumber, args, Environment) {
+  if (args.length != 1) return checkLength(LineNumber, "REMOVE", 1, args)  
+  if (args[0].Type != TOKENS.ARRAY) return checkArgument(LineNumber, "REMOVE", 0, TOKENS.ARRAY, args)
+
+  return [new Array(
+    args[0].Elements.slice(
+        0,
+        args[0].Elements.length - 1
+      ).concat(
+        args[0].Elements.slice(args[0].Elements.length))
+    ), 
+    null
+  ] 
+}
+
+function insert(LineNumber, args, Environment) {
+  if (args.length != 3) return checkLength(LineNumber, "INSERT", 3, args)  
+  if (args[0].Type != TOKENS.ARRAY) return checkArgument(LineNumber, "INSERT", 0, TOKENS.ARRAY, args)
+  if (args[1].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "INSERT", 1, TOKENS.NUMBER, args)
+
+
+  return[
+    new Array([...args[0].Elements.slice(0,args[1].Value), args[2], ...args[0].Elements.slice(args[1].Value)]),
+    null
+  ]
+}
+
 module.exports = {
   PREDEFINED_FUNCTIONS: {
     "LEN": new Predefined(len),
@@ -184,5 +233,9 @@ module.exports = {
     "FLR": new Predefined(flr),
     "RND": new Predefined(rnd),
     "ABS": new Predefined(abs),
+    "PUSH": new Predefined(push),
+    "REMOVE": new Predefined(remove),
+    "POP": new Predefined(pop),
+    "INSERT": new Predefined(insert),
   }
 }

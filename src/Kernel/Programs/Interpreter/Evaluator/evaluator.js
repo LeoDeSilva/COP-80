@@ -247,8 +247,6 @@ function Assign(assignNode, Environment) {
   let [Right, RightErr] = Evaluate(assignNode.Right, Environment)
   if (RightErr != null) return [null, RightErr]
 
-
-
   if (assignNode.Left.Type == TOKENS.IDENTIFIER) {
     if (assignNode.Scope == TOKENS.LOCAL) {
       Environment.Local[assignNode.Left.Identifier] = Right
@@ -260,10 +258,59 @@ function Assign(assignNode, Environment) {
 
       Environment.Global[assignNode.Left.Identifier] = Right
     }
+  } else if (assignNode.Left.Type == TOKENS.INDEX) {
+    let [array, arrayErr] = getArray(assignNode.Left, Environment)
+    if (arrayErr != null) return [null, arrayErr]
+    console.log(array)
+
+    let [generatedString, generatedErr] = generateIndexString("", assignNode.Left, array, Environment) 
+    if (generatedErr != null) return [null, generatedErr]
+
+    let str = "array.Elements" + generatedString.slice(0,-9) + " = Right"
+    try {
+      eval(str)
+    } catch (e) {
+      if (e instanceof TypeError) return [
+        null,
+        new Error("LINE " + assignNode.LineNumber + " CANNOT ASSIGN TO PROVIDED DEPTH")
+      ]
+      
+    }
+
+    return [array, null]
   }
 
   return [new Null(), null]
 }
+
+function getArray(node, Environment) {
+  if (node.Type == TOKENS.INDEX)  {
+    return getArray(node.Left, Environment)
+  }
+    
+  return Evaluate(node, Environment)
+}
+
+function generateIndexString(str, node, array, Environment) { 
+  if (node.Type != TOKENS.INDEX) {
+    return [str, null]
+  }   
+  
+  let [index, indexErr] = Evaluate(node.Index, Environment)
+  if (indexErr != null) return [null, indexErr]
+
+  if (index.Type != TOKENS.NUMBER) return [
+    null,
+    new Error("LINE " + node.LineNumber + " INDEX ERROR, INDEX MUST BE TYPE: NUMBER, GOT: " + index.Type)
+  ]
+
+  if (index.Value >= array.Elements.length) return [
+    null,
+    new Error("LINE " + node.LineNumber + " INDEX ERROR: INDEX OUT OF RANGE"),
+  ]
+
+  return generateIndexString("[" + index.Value + "].Elements" + str, node.Left, Environment)
+}  
 
 // evaluate all sub nodes and return last value
 function Program(programNode, Environment) {

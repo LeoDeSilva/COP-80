@@ -347,6 +347,14 @@ class Parser {
           new Error("SYNTAX_ERROR LINE " + this.lineNumber + ", EXPECTED: ] AFTER INDEX")
         ]
         this.advance()
+
+        if (this.token.Type == TOKENS.EQ) {
+          this.advance()
+          let [expr, exprErr] = this.parsePrattExpression(0)
+          if (exprErr != null) return [null, exprErr]
+          return [new AssignNode(this.lineNumber, TOKENS.GLOBAL, new IndexNode(this.lineNumber, node, index), expr), null]
+        }
+
         return this.parsePostfix(new IndexNode(this.lineNumber, node, index))
     }
     
