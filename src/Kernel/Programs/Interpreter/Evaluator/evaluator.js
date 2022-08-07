@@ -5,6 +5,7 @@ const {
   Number,
   Function,
   String,
+  Array,
   CreateEnvironment,
   Return,
   Null,
@@ -40,12 +41,17 @@ function Evaluate(node, Environment) {
     case TOKENS.RETURN:
       return ReturnWrapper(node, Environment)
 
+    case TOKENS.ARRAY:
+      return evalArray(node, Environment)
+
+    case TOKENS.INDEX:
+      return evalIndex(node, Environment)
+
     case TOKENS.NUMBER:
       return [new Number(node.Value), null]
 
     case TOKENS.STRING:
       return [new String(node.Value), null]
-
 
     case TOKENS.PROGRAM:
       return Program(node, Environment)
@@ -54,6 +60,39 @@ function Evaluate(node, Environment) {
   return [null, new Error("EVAL_ERROR LINE " + node.LineNumber + ", TOKEN " + node.Type + " NOT IMPLEMENTED")]
 }
 
+function evalIndex(arrayNode, Environment) {
+  let [left, leftErr] = Evaluate(arrayNode.Left, Environment)
+  if (leftErr != null) return [null, leftErr]
+
+  if (left.Type != TOKENS.ARRAY) return [
+    null,
+    new Error("LINE " + arrayNode.LineNumber + " CANNOT INDEX TYPE " + left.Type),
+  ]
+  
+  let [index, indexErr] = Evaluate(arrayNode.Index, Environment)
+  if (indexErr != null) return [null, indexErr]
+
+  if (index.Type != TOKENS.NUMBER) return [
+    null,
+    new Error("LINE " + arrayNode.LineNumber + " INDEX MUST BE OF TYPE NUMBER, GOT: " + index.Type),
+  ]
+
+
+  if (index.Value >= left.Elements.length) return [
+    null,
+    new Error("LINE " + arrayNode.LineNumber + " INDEX ERROR: INDEX OUT OF RANGE"),
+  ]
+  
+  return [left.Elements[index.Value], null]
+}
+
+function evalArray(arrayNode, Environment) {
+  let [elements, elementsErr] = evalArguments(arrayNode.Elements, Environment)
+  if (elementsErr != null) return [null, elementsErr]
+
+  return [new Array(elements), null]
+}
+ 
 function ReturnWrapper(returnNode, Environment) {
   let [expression, expressionErr] = Evaluate(returnNode.Expression, Environment)
   if (expressionErr != null) return [null, expressionErr]

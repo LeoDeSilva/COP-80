@@ -1,7 +1,9 @@
 const { TOKENS, Error, Token } = require("../Lexer/tokens");
 const {
   ProgramNode,
+  IndexNode,
   FunctionNode,
+  ArrayNode,
   InvokeNode,
   NumberNode,
   WhileNode,
@@ -308,6 +310,13 @@ class Parser {
         this.advance()
         return this.parsePostfix(new IdentifierNode(this.lineNumber, identifier))
 
+      case TOKENS.LSQUARE:
+        this.advance()
+        let [elements, elementErr] = this.parseArguments(TOKENS.RSQUARE) 
+        if (elementErr != null) return [null, elementErr]
+        this.advance()
+        return [new ArrayNode(this.lineNumber, elements), null]
+
       default:
         return [
           null,
@@ -325,18 +334,28 @@ class Parser {
     switch (this.token.Type) {
       case TOKENS.LPAREN:
         this.advance()
-        let [args, argErr] = this.parseArguments() 
+        let [args, argErr] = this.parseArguments(TOKENS.RPAREN) 
         if (argErr != null) return [null, argErr]
         this.advance()
         return [new InvokeNode(this.lineNumber, node, args), null]
+      case TOKENS.LSQUARE:
+        this.advance()
+        let [index, indexErr] = this.parsePrattExpression(0)  
+        if (indexErr != null) return [null, indexErr]
+        if (this.token.Type != TOKENS.RSQUARE) return [
+          null,
+          new Error("SYNTAX_ERROR LINE " + this.lineNumber + ", EXPECTED: ] AFTER INDEX")
+        ]
+        this.advance()
+        return this.parsePostfix(new IndexNode(this.lineNumber, node, index))
     }
     
     return [node, null]
   }
 
-  parseArguments() {
+  parseArguments(terminator) {
     let args = []
-    if (this.token.Type == TOKENS.RPAREN) {
+    if (this.token.Type == terminator) {
       return [args, null] // continue on )
     }
 
@@ -351,10 +370,10 @@ class Parser {
       args.push(arg)
     }
 
-    if (this.token.Type != TOKENS.RPAREN) {
+    if (this.token.Type != terminator) {
       return [
         null,
-        new Error("SYNTAX_ERROR LINE " + this.lineNumber + ", EXPECTED ) AFTER PARAMETERS")
+        new Error("SYNTAX_ERROR LINE " + this.lineNumber + ", EXPECTED: " + terminator + " AFTER PARAMETERS")
       ]
     }
 

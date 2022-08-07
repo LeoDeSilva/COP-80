@@ -10,8 +10,10 @@ class Editor {
     this.fileData = Kernel.MemoryChip.GetFile(this.fileName).FileData;
     this.cursorIndex = 0;
 
-    this.drawStartY = 9 + 3;
-    this.drawStartX = 3;
+    this.startX = 1;
+    this.startY = 9;
+    this.drawStartY = 9;
+    this.drawStartX = 1;
 
     this.maxCursorBlinkTimout = 16;
     this.cursorShowTimout = 10;
@@ -43,9 +45,9 @@ class Editor {
 
     // INSTEAD OF SCROLLING, MODIFY POS (TO start rendering text) (hence appears off screen - illusion of scroll)
     if (cursorY + 6 > 128) this.drawStartY -= 6; // IF AT BOTTOM Of SCREEN (start rendering text heigher)
-    if (cursorY < 9 + 3) this.drawStartY += 6; // IF AT TOP (BELOW TITLE BAR)
+    if (cursorY < this.startY) this.drawStartY += 6; // IF AT TOP (BELOW TITLE BAR)
 
-    if (cursorX < 3) this.drawStartX += 4; // LEFT OF SCREEN
+    if (cursorX < this.startX) this.drawStartX += 4; // LEFT OF SCREEN
     if (cursorX + 4 > 128) this.drawStartX -= 4; // RIGHT OF SCREEN
 
     // DISPLAY FILE TEXT
@@ -66,9 +68,9 @@ class Editor {
     this.drawCursor(this.drawStartX, this.drawStartY);
 
     // TITLE BAR
-    this.Kernel.DisplayChip.Rect(2, 2, 124, 7, this.foregroundColour);
+    this.Kernel.DisplayChip.Rect(0, 0, 128, 7, this.foregroundColour);
 
-    this.Kernel.DisplayChip.Rect(0, 1, 128, 1, this.backgroundColour);
+    //this.Kernel.DisplayChip.Rect(0, 1, 128, 1, this.backgroundColour);
 
     // SCREEN BORDER - RENDERED ON TOP OF TEXT (HENCE BELOW)
     //this.Kernel.DisplayChip.Rect(0, 127, 128, 1, this.foregroundColour);
@@ -79,8 +81,8 @@ class Editor {
     this.Kernel.FontChip.BlitText(
       this.Kernel.DisplayChip,
       this.fileName,
-      3,
-      3,
+      1,
+      1,
       this.backgroundColour
     );
   }
@@ -97,16 +99,15 @@ class Editor {
       switch (this.tokens[i].Type) {
         case TOKENS.STRING:
         case TOKENS.NUMBER:
-          colour = 12
-          break;
-        case TOKENS.IDENTIFIER:
           colour = 6
           break
+        case TOKENS.IDENTIFIER:
+          colour = 7
         default:
           if (KEYWORDS[this.tokens[i].Type] != null)
-            colour = 14
+            colour = 6
           if (PREDEFINED_FUNCTIONS[this.tokens[i].Literal] != null) 
-            colour = 15
+            colour = 7
       }
 
       [tokX, tokY] = this.Kernel.FontChip.BlitText(

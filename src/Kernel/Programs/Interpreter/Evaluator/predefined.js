@@ -31,6 +31,13 @@ function flr(LineNumber, args, Environment) {
   return [new Number(Math.floor(args[0].Value)), null]
 }
 
+function abs(LineNumber, args, Environment) {
+  if (args.length != 1) return checkLength(LineNumber, "ABS", 1, args)
+  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "ABS", 0, TOKENS.NUMBER, args)
+
+  return [new Number(Math.abs(args[0].Value)), null]
+}
+
 function rnd(LineNumber, args, Environment) {
   if (args.length != 1) return checkLength(LineNumber, "RND", 1, args)
   if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "RND", 0, TOKENS.NUMBER, args)
@@ -64,19 +71,28 @@ function btn(LineNumber, args, Environment) {
   return [new Number(Environment.Kernel.KeyboardChip.isPressed(key)), null]
 }
 
-function joinArguments(LineNumber, args) {
+function joinArguments(LineNumber, args, join=" ") {
   let str = ""
   for (let i = 0; i < args.length; i++) {
     switch(args[i].Type) {
       case TOKENS.NUMBER:
         str += parseFloat(args[i].Value.toFixed(12)).toString()
         break
+      case TOKENS.ARRAY:
+        //str += args[i].Elements.map(function(obj) {
+        //  return obj.Value
+        //})
+
+        let [elementStr, elementErr] = joinArguments(LineNumber, args[i].Elements, ",")
+        if (elementErr != null) return [null, elementErr]
+        str += "[" + elementStr + "]"
+        break
       case TOKENS.STRING:
         str += args[i].Value
         break
     }
 
-    if (i != args.length - 1) str += " "
+    if (i != args.length - 1) str += join
   }
 
   return [str, null]
@@ -167,5 +183,6 @@ module.exports = {
     "BTN": new Predefined(btn),
     "FLR": new Predefined(flr),
     "RND": new Predefined(rnd),
+    "ABS": new Predefined(abs),
   }
 }

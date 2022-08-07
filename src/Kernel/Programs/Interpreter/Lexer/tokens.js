@@ -79,6 +79,7 @@ module.exports = {
     FOR: "FOR",
     WHILE: "WHILE",
     FN: "FN",
+    INDEX: "INDEX",
 
     END: "END",
     THEN: "THEN",
@@ -87,6 +88,8 @@ module.exports = {
 
     AND: "AND",
     OR: "OR",
+
+    ARRAY: "ARRAY",
 
     //UNPRINTABLES
     EOF: "EOF",

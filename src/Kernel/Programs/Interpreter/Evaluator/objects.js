@@ -23,6 +23,13 @@ class Object {
   }
 }
 
+class Array extends Object {
+  constructor(Elements) {
+    super(TOKENS.ARRAY)
+    this.Elements = Elements
+  }
+}
+
 class Predefined extends Object {
   constructor(Fn) {
     super(TOKENS.PREDEFINED)
@@ -210,6 +217,7 @@ module.exports = {
   Number,
   String,
   Function,
+  Array,
   Predefined,
   Return,
   Null,

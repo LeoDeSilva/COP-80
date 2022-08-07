@@ -67,6 +67,21 @@ class InvokeNode extends Node {
   }
 }
 
+class IndexNode extends Node {
+  constructor(LineNumber, Left, Index) {
+    super(LineNumber, TOKENS.INDEX)
+    this.Left = Left
+    this.Index = Index
+  }
+}
+
+class ArrayNode extends Node {
+  constructor(LineNumber, Elements) {
+    super(LineNumber, TOKENS.ARRAY)
+    this.Elements = Elements
+  }
+}
+
 class FunctionNode extends Node {
   constructor(LineNumber, Identifier, Parameters, Body) {
     super(LineNumber, TOKENS.FUNCTION)
@@ -149,11 +164,13 @@ module.exports = {
   AssignNode,
   FunctionNode,
   InvokeNode,
+  ArrayNode,
   BinaryOperationNode,
   UnaryOperationNode,
   IfNode,
   ReturnNode,
   PREFERENCES,
   BIN_OPERATIONS,
+  IndexNode,
   WhileNode,
 };
