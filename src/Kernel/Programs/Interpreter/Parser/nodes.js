@@ -91,7 +91,14 @@ class FunctionNode extends Node {
   }
 }
 
-class ForNode extends Node { }
+class ForNode extends Node { 
+  constructor(LineNumber, Identifier, Expression, Body) {
+    super(LineNumber, TOKENS.FOR)
+    this.Identifier = Identifier
+    this.Expression = Expression
+    this.Body = Body
+  }
+}
 
 class WhileNode extends Node {
   constructor(LineNumber, Condition, Consequence) {
@@ -173,4 +180,5 @@ module.exports = {
   BIN_OPERATIONS,
   IndexNode,
   WhileNode,
+  ForNode,
 };

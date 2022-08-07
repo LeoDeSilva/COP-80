@@ -29,6 +29,9 @@ function Evaluate(node, Environment) {
     case TOKENS.WHILE:
       return While(node, Environment)
 
+    case TOKENS.FOR:
+      return For(node, Environment)
+
     case TOKENS.BINARY_OP:
       return BinaryOperation(node, Environment)
 
@@ -58,6 +61,39 @@ function Evaluate(node, Environment) {
   }
 
   return [null, new Error("EVAL_ERROR LINE " + node.LineNumber + ", TOKEN " + node.Type + " NOT IMPLEMENTED")]
+}
+
+function For(forNode, Environment) {
+  let [expr, exprErr] = Evaluate(forNode.Expression, Environment)
+  if (exprErr != null) return [null, exprErr]
+
+  let looper = null
+  if (expr.Type == TOKENS.STRING) {
+    looper = expr.Value 
+  } else if (expr.Type == TOKENS.ARRAY) {
+    looper = expr.Elements
+  } else {
+    return [
+      null,
+      new Error("LINE " + forNode.LineNumber + " CANNOT LOOP OVER TYPE: " + expr.Type)
+    ]
+  }
+
+  let index = 0
+  while (index < looper.length) {
+    if (expr.Type == TOKENS.STRING) 
+      Environment.Local[forNode.Identifier] = new String(looper[index])
+    else
+        Environment.Local[forNode.Identifier] = looper[index]
+
+    let [body, bodyErr] = Evaluate(forNode.Body, Environment)
+    if (bodyErr != null) return [null, bodyErr]
+    if (body.Type == TOKENS.RETURN) return [body, null]
+    
+    index++
+  }
+
+  return [new Null(), null]
 }
 
 function evalIndex(arrayNode, Environment) {

@@ -184,9 +184,8 @@ function remove(LineNumber, args, Environment) {
     new Error("LINE " + LineNumber + " REMOVE INDEX OUT OF RANGE: " + args[1].Value)
   ]
 
-  return [new Array(
-    args[0].Elements.slice(0,args[1].Value
-    ).concat(
+  return [
+    new Array(args[0].Elements.slice(0,args[1].Value).concat(
       args[0].Elements.slice(
         args[1].Value + 1)
     )), 
@@ -198,11 +197,8 @@ function pop(LineNumber, args, Environment) {
   if (args.length != 1) return checkLength(LineNumber, "REMOVE", 1, args)  
   if (args[0].Type != TOKENS.ARRAY) return checkArgument(LineNumber, "REMOVE", 0, TOKENS.ARRAY, args)
 
-  return [new Array(
-    args[0].Elements.slice(
-        0,
-        args[0].Elements.length - 1
-      ).concat(
+  return [
+    new Array( args[0].Elements.slice(0, args[0].Elements.length - 1).concat(
         args[0].Elements.slice(args[0].Elements.length))
     ), 
     null

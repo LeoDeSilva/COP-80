@@ -3,6 +3,7 @@ const {
   ProgramNode,
   IndexNode,
   FunctionNode,
+  ForNode,
   ArrayNode,
   InvokeNode,
   NumberNode,
@@ -170,7 +171,35 @@ class Parser {
   }
 
   parseFor() {
-      
+    if (this.token.Type != TOKENS.IDENTIFIER) return [
+      null,
+      new Error("SYNTAX ERROR LINE " + this.lineNumber + " EXPECTED IDENTIFIER AFTER FOR")
+    ]
+
+    let identifier = this.token.Literal
+    this.advance()
+
+    if (this.token.Type != TOKENS.IN) return [
+      null,
+      new Error("SYNTAX ERROR LINE " + this.lineNumber + " EXPECTED 'IN' AFTER IDENTIFIER")
+    ]
+
+    this.advance()
+
+    let [expr, exprErr] = this.parsePrattExpression(0)
+    if (exprErr != null) return [null, exprErr]
+
+    if (this.token.Type != TOKENS.DO) return [
+      null,
+      new Error("SYNTAX_ERROR LINE " + this.lineNumber + ", EXPECTED  KEYWORD: 'DO' AFTER EXPRESSION")
+    ]
+
+    this.advance()
+    let [consequence, consequenceErr] = this.parseUntil([TOKENS.END])
+    if (consequenceErr != null) return [null, consequenceErr]
+    this.advance()
+
+    return [new ForNode(this.lineNumber, identifier, expr, consequence), null]
   }
 
   parseWhile() {

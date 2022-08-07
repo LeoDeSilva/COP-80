@@ -84,6 +84,7 @@ module.exports = {
     END: "END",
     THEN: "THEN",
     DO: "DO",
+    IN: "IN",
     GO: "GO",
 
     AND: "AND",
