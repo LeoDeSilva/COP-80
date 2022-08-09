@@ -67,6 +67,7 @@ module.exports = {
     FUNCTION: "FUNCTION",
     INVOKE: "INVOKE",
     KEYWORD: "KEYWORD",
+    COMMENT: "COMMENT",
 
     GLOBAL: "GLOBAL",
 

@@ -21,6 +21,14 @@ class Lexer {
     this.readIndex++;
   }
 
+  previous() {
+    if (this.readIndex > 0) {
+      this.readIndex--;
+      this.index--;
+      this.char = this.fileString[this.index];
+    }
+  }
+
   // USED IN MULTICHAR (CHECK NEXT CHAR w/o ADVANCING)
   peek() {
     if (this.readIndex >= this.fileString.length) return TOKENS.EOF; // IF CHAR EXISTS
@@ -50,7 +58,11 @@ class Lexer {
         break;
 
       case "-":
-        token = new Token(TOKENS.SUB, this.char, this.lineNumber);
+        if (this.peek() == "-") 
+          token = this.lexComment()
+        else 
+          token = new Token(TOKENS.SUB, this.char, this.lineNumber);
+
         break;
 
       case "*":
@@ -116,6 +128,10 @@ class Lexer {
 
       case ";": //TODO: REMOVE IF NOT USING SEMI's
         token = new Token(TOKENS.SEMICOLON, this.char, this.lineNumber);
+        break;
+
+      case ":": //TODO: REMOVE IF NOT USING SEMI's
+        token = new Token(TOKENS.COLON, this.char, this.lineNumber);
         break;
 
       case "=":
@@ -219,7 +235,8 @@ class Lexer {
     let lexedString = "\"";
 
     while (this.char != terminator) {
-      if (this.char == "EOF")
+      if (this.char == "EOF" || this.peek() == "\n") {
+        if (this.peek() == "\n") lexedString += this.char
         // IF EOF w/o string terminating:
         return [
           new Token(TOKENS.STRING, lexedString, this.lineNumber),
@@ -230,7 +247,7 @@ class Lexer {
               terminator
           ),
         ];
-
+      }
       lexedString += this.char;
       this.advance();
     }
@@ -238,6 +255,25 @@ class Lexer {
     lexedString += "\""
     //this.advance();
     return [new Token(TOKENS.STRING, lexedString, this.lineNumber), null];
+  }
+
+  lexComment() {
+    this.advance();
+
+    if (["\n", TOKENS.EOF].includes(this.peek())) 
+      return new Token(TOKENS.COMMENT, "--", this.lineNumber)
+
+    this.advance()
+    let lexedString = "--";
+
+    while (!["\n", TOKENS.EOF].includes(this.peek())) {
+      lexedString += this.char;
+      this.advance();
+    }
+
+    lexedString += this.char
+    //this.advance();
+    return new Token(TOKENS.COMMENT, lexedString, this.lineNumber)
   }
 }
 

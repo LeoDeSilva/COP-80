@@ -101,6 +101,9 @@ class Editor {
         case TOKENS.NUMBER:
           colour = 6
           break
+        case TOKENS.COMMENT:
+          colour = 5
+          break;
         case TOKENS.IDENTIFIER:
           colour = 7
         default:
@@ -177,6 +180,24 @@ class Editor {
         this.cursorIndex--
         break;
 
+      case "{":
+        this.insertKey("{");
+        this.insertKey("}");
+        this.cursorIndex--
+        break;
+
+      case "[":
+        this.insertKey("[");
+        this.insertKey("]");
+        this.cursorIndex--
+        break;
+
+      case "(":
+        this.insertKey("(");
+      this.insertKey(")");
+        this.cursorIndex--
+        break;
+
       default:
         // IF A FONT CHAR EXISTS
         if (this.Kernel.FontChip.FONT[key] != null) {
@@ -188,6 +209,7 @@ class Editor {
     let lexer = new Lexer(this.fileData)
     let [tokens, err] = lexer.Lex(true)
     this.tokens = tokens
+    console.log(this.tokens)
   }
 
   getCursorXY(x, y) {

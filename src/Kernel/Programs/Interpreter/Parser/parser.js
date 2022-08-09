@@ -32,6 +32,8 @@ class Parser {
     if (this.index >= this.tokens.length) return new Token(TOKENS.EOF, "");
     this.token = this.tokens[this.index];
     this.lineNumber = this.token.LineNumber;
+
+    if (this.token.Type == TOKENS.COMMENT) this.advance()
   }
 
   peek() {

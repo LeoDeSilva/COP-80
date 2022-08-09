@@ -8,8 +8,8 @@ function CreateEnvironment(Kernel) {
 class Environment {
   constructor(Kernel) {
     this.Global = {
-      TRUE: new Number(0,1),
-      FALSE: new Number(0,0),
+      TRUE: new Number(1),
+      FALSE: new Number(0),
     }
     this.Local = {}
     this.Kernel = Kernel
@@ -218,7 +218,7 @@ module.exports = {
   String,
   Function,
   Array,
-  Predefined,
   Return,
+  Predefined,
   Null,
 }
