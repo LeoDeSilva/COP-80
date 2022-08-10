@@ -34,6 +34,7 @@ class Editor {
     let lexer = new Lexer(this.fileData)
     let [tokens, err] = lexer.Lex(true)
     this.tokens = tokens
+    console.log("HELLO WORLD")
   }
 
   Update() {
@@ -133,6 +134,7 @@ class Editor {
     let fileIndex = this.Kernel.MemoryChip.CurrentDirectory.Files.indexOf(file);
     this.Kernel.MemoryChip.CurrentDirectory.Files[fileIndex].FileData =
       this.fileData;
+    this.Kernel.Save()
   }
 
   handleKeyPress(key) {

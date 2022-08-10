@@ -231,11 +231,23 @@ class Lexer {
   }
 
   lexString(terminator) {
-    this.advance();
-    let lexedString = "\"";
+    if (["\n", TOKENS.EOF].includes(this.peek())) 
+        return [
+          new Token(TOKENS.STRING, terminator, this.lineNumber),
+          new Error(
+            "SYNTAX ERROR LINE " +
+              this.lineNumber +
+              "\nMISSING STRING TERMINATOR " +
+              terminator
+          ),
+        ];
+
+    //this.advance();
+    let lexedString = terminator;
+    this.advance()
 
     while (this.char != terminator) {
-      if (this.char == "EOF" || this.peek() == "\n") {
+      if (this.peek() == "EOF" || this.peek() == "\n") {
         if (this.peek() == "\n") lexedString += this.char
         // IF EOF w/o string terminating:
         return [
@@ -252,7 +264,7 @@ class Lexer {
       this.advance();
     }
 
-    lexedString += "\""
+    lexedString += terminator
     //this.advance();
     return [new Token(TOKENS.STRING, lexedString, this.lineNumber), null];
   }

@@ -21,7 +21,8 @@ function main() {
 
   setInterval(() => {
     kernel.Update();
-  }, 30); // FRAMERATE
+  }, (1/30)*1000); // FRAMERATE
 }
 
 main();
+

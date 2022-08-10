@@ -10,6 +10,8 @@ const {
   Touch,
   ChangeDirectory,
   Run,
+  Delete,
+  Rmdir,
   Cat,
 } = require("./TerminalCommands");
 
@@ -111,6 +113,7 @@ class Terminal {
       case "CAT":
       case "EDIT":
       case "RUN":
+      case "DEL":
         if (this.Kernel.MemoryChip.CurrentDirectory.Files.length < 1) { return }
         if (this.Kernel.MemoryChip.CurrentDirectory.Files.length <= this.tabCirculateIndex) { this.tabCirculateIndex = 0 }
         this.inputBuffer = this.inputBuffer.toUpperCase().split(" ")[0] + " " + this.Kernel.MemoryChip.GetFiles()[this.tabCirculateIndex].Name
@@ -118,6 +121,7 @@ class Terminal {
         break;
 
       case "CD":
+      case "RMDIR":
         if (this.Kernel.MemoryChip.CurrentDirectory.SubDirs.length < 1) { return }
         if (this.Kernel.MemoryChip.CurrentDirectory.SubDirs.length <= this.tabCirculateIndex) { this.tabCirculateIndex = 0 }
         this.inputBuffer = this.inputBuffer.toUpperCase().split(" ")[0] + " " + this.Kernel.MemoryChip.GetDirs()[this.tabCirculateIndex].Name
@@ -137,6 +141,14 @@ class Terminal {
 
       case "CD":
         ChangeDirectory(this);
+        break;
+
+      case "DEL":
+        Delete(this);
+        break;
+
+      case "RMDIR":
+        Rmdir(this);
         break;
 
       case "LS":
@@ -182,6 +194,7 @@ class Terminal {
     }
     this.inputBuffer = "";
     this.cursorIndex = 0;
+    this.Kernel.Save()
   }
 
   handleKeyPress(key) {

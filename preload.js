@@ -13,8 +13,12 @@ const createWindow = () => {
   });
 
   win.loadFile("src/index.html");
+
+  win.on('close', () => {
+    console.log(' ---- Bye Bye Electron ---- ')
+  });
 };
 
 app.whenReady().then(() => {
   createWindow();
-});
+})

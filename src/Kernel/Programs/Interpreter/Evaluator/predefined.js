@@ -19,9 +19,15 @@ function checkLength(LineNumber, Identifier, Length, Args) {
 function len(LineNumber, args, Environment) {
   if (args.length != 1) return checkLength(LineNumber, "LEN", 1, args)  
 
-  if (args[0].Type != TOKENS.STRING) return checkArgument(LineNumber, "LEN", 0, TOKENS.STRING, args)
+  if (![TOKENS.STRING, TOKENS.ARRAY].includes(args[0].Type)) return [
+    null,
+    new Error("LINE " + LineNumber + " ARGUMENT " + (Index + 1) + " TO " + Identifier + "() MUST BE OF TYPE: ARRAY OR STRING , GOT: " + Args[Index].Type)
+  ]
 
-  return [new Number(args[0].Value.length), null]
+  if (args[0].Type == TOKENS.STRING)
+    return [new Number(args[0].Value.length), null]
+  else
+    return [new Number(args[0].Elements.length), null]
 }
 
 function flr(LineNumber, args, Environment) {

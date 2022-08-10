@@ -17,7 +17,8 @@ class File {
 }
 
 class MemoryChip {
-  constructor() {
+  constructor(Kernel) {
+    this.Kernel = Kernel
     this.BaseDirectory = new Folder("BASE");
     this.BaseDirectory.Parent = this.BaseDirectory;
 
@@ -49,10 +50,35 @@ class MemoryChip {
     if (file.Type == "file") return file;
   }
 
+  DeleteFile(fileName) {
+    let file = this.GetFile(fileName)
+    if (file === undefined)
+      return "FILE NOT FOUND"
+
+    this.CurrentDirectory.Files = this.CurrentDirectory.Files.filter(function(item) {
+      return item != file
+    })
+
+    this.Kernel.Save()
+    return ""
+  }
+
   GetDirectory(dirname) {
     let folder = this.CurrentDirectory.SubDirs.find((x) => x.Name === dirname);
     if (folder === undefined) return;
     if (folder.Type == "folder") return folder;
+  }
+
+  DeleteDirectory(dirName) {
+    let dir = this.GetDirectory(dirName)
+    if (dir === undefined)
+      return "DIR NOT FOUND"
+
+    this.CurrentDirectory.SubDirs = this.CurrentDirectory.Files.filter(function(item) {
+      return item != dir
+    })
+    this.Kernel.Save()
+    return ""
   }
 
   EnterDirectory(dirName) {
@@ -78,11 +104,13 @@ class MemoryChip {
     this.CurrentDirectory.SubDirs.push(
       new Folder(folderName, this.CurrentDirectory)
     );
+    this.Kernel.Save()
   }
 
   CreateFile(fileName, fileData) {
     if (this.GetFile(fileName) != undefined) return true;
     this.CurrentDirectory.Files.push(new File(fileName, fileData));
+    this.Kernel.Save()
   }
 }
 

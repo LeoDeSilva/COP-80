@@ -68,6 +68,30 @@ function Touch(Terminal) {
   }
 }
 
+function Delete(Terminal) {
+  let cmd = parseCommand(Terminal.inputBuffer)
+  let fileName = cmd.content[0]
+
+  if (fileName != null) {
+    let err = Terminal.Kernel.MemoryChip.DeleteFile(fileName);
+    if (err) {
+      Terminal.appendHistory("string", err, 14);
+    }
+  }
+}
+
+function Rmdir(Terminal) {
+  let cmd = parseCommand(Terminal.inputBuffer)
+  let dirName = cmd.content[0]
+
+  if (dirName != null) {
+    let err = Terminal.Kernel.MemoryChip.DeleteDirectory(dirName);
+    if (err) {
+      Terminal.appendHistory("string", err, 14);
+    }
+  }
+}
+
 function ChangeDirectory(Terminal) {
   let directory = parseCommand(Terminal.inputBuffer).content[0];
   let err = 0;
@@ -116,13 +140,19 @@ function ListDirectory(Terminal) {
 }
 
 function Edit(Terminal) {
+  console.log("EDIT")
   let fileName = parseCommand(Terminal.inputBuffer).content[0];
   if (fileName == "" || fileName == undefined) {
     Terminal.appendHistory("string", "ERROR: FILE NOT FOUND", 14);
     return;
   }
+
+  console.log(fileName)
+
   let file = Terminal.Kernel.MemoryChip.GetFile(fileName);
   if (file === undefined) Terminal.Kernel.MemoryChip.CreateFile(fileName, "");
+
+  console.log(file)
   Terminal.Kernel.Load(new Editor(Terminal.Kernel, fileName));
   Terminal.Kernel.lastProgram = Terminal;
 }
@@ -273,4 +303,6 @@ module.exports = {
   Touch,
   Run,
   Cat,
+  Rmdir,
+  Delete,
 };
