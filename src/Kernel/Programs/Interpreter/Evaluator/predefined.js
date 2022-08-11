@@ -104,7 +104,7 @@ function print(LineNumber, args, Environment) {
   let [str, strErr] = joinArguments(LineNumber, args)
   if (strErr != null) return [null, strErr]
 
-  Environment.Kernel.lastProgram.appendHistory("string", str, 6);
+  Environment.Kernel.loadedProgram.appendHistory("string", str, 6);
   return [new Null(), null]
 }
 

@@ -52,6 +52,13 @@ class ProgramNode extends Node {
   }
 }
 
+class TableNode extends Node { 
+  constructor(LineNumber, Table) {
+    super(LineNumber, TOKENS.TABLE) 
+    this.Table = Table
+  }
+}
+
 class ReturnNode extends Node {
   constructor(LineNumber, Expression) {
     super(LineNumber, TOKENS.RETURN)
@@ -180,5 +187,6 @@ module.exports = {
   BIN_OPERATIONS,
   IndexNode,
   WhileNode,
+  TableNode,
   ForNode,
 };

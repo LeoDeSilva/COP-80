@@ -3,6 +3,7 @@ const { DisplayChip } = require("../../../Chips/Display/DisplayChip");
 const {
   Welcome,
   Echo,
+  Load,
   Colour,
   Edit,
   MakeDirectory,
@@ -135,6 +136,10 @@ class Terminal {
     this.appendHistory("string", "> " + this.inputBuffer, 7);
 
     switch (this.inputBuffer.toUpperCase().split(" ")[0]) {
+      case "LOAD":
+        Load(this)
+        break
+
       case "RUN":
         Run(this);
         break;

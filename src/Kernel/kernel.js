@@ -26,7 +26,6 @@ class Kernel {
     this.loadedProgram.Start();
 
     this.ParseSave()
-    console.log(this.Get())
   }
 
   Update() {
@@ -60,7 +59,6 @@ class Kernel {
     this.MemoryChip.CurrentDirectory = this.MemoryChip.BaseDirectory;
     this.MemoryChip.FilePath = [this.MemoryChip.BaseDirectory];
 
-    console.log(this.MemoryChip)
   }
 }
 

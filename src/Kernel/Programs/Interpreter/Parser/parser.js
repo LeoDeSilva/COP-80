@@ -1,6 +1,7 @@
 const { TOKENS, Error, Token } = require("../Lexer/tokens");
 const {
   ProgramNode,
+  TableNode,
   IndexNode,
   FunctionNode,
   ForNode,
@@ -27,18 +28,35 @@ class Parser {
     this.lineNumber = 1;
   }
 
-  advance() {
+  advance(skipNewLines=false) {
     this.index++;
     if (this.index >= this.tokens.length) return new Token(TOKENS.EOF, "");
     this.token = this.tokens[this.index];
     this.lineNumber = this.token.LineNumber;
 
-    if (this.token.Type == TOKENS.COMMENT) this.advance()
+    if ([TOKENS.COMMENT].includes(this.token.Type)) this.advance()
+    if (skipNewLines) this.skip()
   }
 
-  peek() {
+  skip() {
+    while (this.token.Type == TOKENS.NEW_LINE) {
+      this.advance()
+    }
+   }
+
+  peek(skipNewLines=false) {
     if (this.index + 1 >= this.tokens.length) return new Token(TOKENS.EOF, "");
     //if ([TOKENS.TAB, TOKENS.SPACE].includes(this.tokens[this.index + 1].Type)) this.advance()
+
+    if (skipNewLines) {
+      let i = 0;
+      while (this.tokens[i].Type == TOKENS.NEW_LINE) {
+        i = i + 1 
+      }
+
+      return this.tokens[i+1]
+    }
+
     return this.tokens[this.index + 1];
   }
 
@@ -342,11 +360,14 @@ class Parser {
         return this.parsePostfix(new IdentifierNode(this.lineNumber, identifier))
 
       case TOKENS.LSQUARE:
-        this.advance()
+        this.advance(true)
         let [elements, elementErr] = this.parseArguments(TOKENS.RSQUARE) 
         if (elementErr != null) return [null, elementErr]
-        this.advance()
-        return [new ArrayNode(this.lineNumber, elements), null]
+        if (this.peek().Type == TOKENS.COMMA) this.advance()
+        return this.parsePostfix(new ArrayNode(this.lineNumber, elements))
+
+      case TOKENS.LBRACE:
+        return this.parseTable()
 
       default:
         return [
@@ -361,16 +382,62 @@ class Parser {
     }
   }
 
+  parseTable() {
+    this.advance(true)
+    let table = new TableNode(this.lineNumber, {})
+
+    while (this.token.Type != TOKENS.RBRACE) {
+      if (this.token.Type == TOKENS.EOF) return [
+        null, 
+        new Error("LINE " + this.lineNumber + " EXPECTED } AFTER TABLE")
+      ]
+
+      if (![TOKENS.IDENTIFIER, TOKENS.STRING, TOKENS.NUMBER].includes(this.token.Type)) return [
+        null,
+        new Error("LINE " + this.lineNumber + " EXPECTED IDENTIFIER, STRING OR NUMBER AS TABLE KEY, GOT: " + this.token.Type)
+      ]
+
+      let key = this.token.Literal
+  
+      if (this.token.Type == TOKENS.STRING) key = key.slice(1,-1)
+
+      this.advance()
+
+      if (this.token.Type != TOKENS.COLON) return [
+        null,
+        new Error("LINE " + this.lineNumber + " EXPECTED COLON AFTER KEY IN TABLE")
+      ]
+
+      this.advance()
+      let [expr, exprErr] = this.parsePrattExpression(0)
+
+      if (exprErr != null) return [null, exprErr]
+
+      if (this.token.Type != TOKENS.COMMA && this.peek(true) != TOKENS.RBRACE) return [
+        null,
+        new Error("LINE " + this.lineNumber + " EXPECTED COMMA AFTER EXPRESSION")
+      ]
+
+      this.advance(true)
+
+      table.Table[key] = expr
+    }
+
+    this.advance()
+    return [table, null]
+  }
+
   parsePostfix(node) {
     switch (this.token.Type) {
       case TOKENS.LPAREN:
-        this.advance()
+        this.advance(true)
         let [args, argErr] = this.parseArguments(TOKENS.RPAREN) 
         if (argErr != null) return [null, argErr]
         this.advance()
-        return [new InvokeNode(this.lineNumber, node, args), null]
+        return this.parsePostfix(new InvokeNode(this.lineNumber, node, args))
+
       case TOKENS.LSQUARE:
-        this.advance()
+        this.advance(true)
         let [index, indexErr] = this.parsePrattExpression(0)  
         if (indexErr != null) return [null, indexErr]
         if (this.token.Type != TOKENS.RSQUARE) return [
@@ -403,11 +470,13 @@ class Parser {
     args.push(arg)
 
     while (this.token.Type == TOKENS.COMMA) {
-      this.advance()
+      this.advance(true)
       let [arg, argErr] = this.parsePrattExpression(0)  
       if (argErr != null) return [null, argErr]
       args.push(arg)
     }
+  
+    this.skip()
 
     if (this.token.Type != terminator) {
       return [

@@ -30,7 +30,6 @@ class Interpreter {
   Update() {
     if (this.Kernel.loadedProgram != this) return;
 
-    console.log(this.Kernel.KeyboardChip.pressedKeys)
     if (this.Kernel.KeyboardChip.isPressed("Escape") || this.error != "") {
       if (this.error != "") {
         // assuming lastProgram is terminal, if providing errors, assign permentant terminal to kernel

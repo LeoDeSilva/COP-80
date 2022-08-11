@@ -10,6 +10,7 @@ class Environment {
     this.Global = {
       TRUE: new Number(1),
       FALSE: new Number(0),
+      DT: new Number(1/30),
     }
     this.Local = {}
     this.Kernel = Kernel
@@ -20,6 +21,13 @@ class Environment {
 class Object {
   constructor(Type) {
     this.Type = Type
+  }
+}
+
+class Table extends Object {
+  constructor(Table) {
+    super(TOKENS.TABLE)
+    this.Table = Table
   }
 }
 
@@ -219,6 +227,7 @@ module.exports = {
   Function,
   Array,
   Return,
+  Table,
   Predefined,
   Null,
 }

@@ -62,6 +62,7 @@ module.exports = {
       
     //DATA TYPES
     STRING: "STRING",
+    TABLE: "TABLE",
     NUMBER: "NUMBER",
     IDENTIFIER: "IDENTIFIER",
     FUNCTION: "FUNCTION",

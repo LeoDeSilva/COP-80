@@ -34,7 +34,6 @@ class Editor {
     let lexer = new Lexer(this.fileData)
     let [tokens, err] = lexer.Lex(true)
     this.tokens = tokens
-    console.log("HELLO WORLD")
   }
 
   Update() {
@@ -211,7 +210,6 @@ class Editor {
     let lexer = new Lexer(this.fileData)
     let [tokens, err] = lexer.Lex(true)
     this.tokens = tokens
-    console.log(this.tokens)
   }
 
   getCursorXY(x, y) {

@@ -37,6 +37,8 @@ function Run(Terminal) {
 
   let parser = new Parser(tokens);
   let [ast, parserErr] = parser.Parse();
+
+  console.log(ast)
   if (parserErr != null) {
     Terminal.appendHistory("string", parserErr.msg, 14);
     return;
@@ -140,22 +142,19 @@ function ListDirectory(Terminal) {
 }
 
 function Edit(Terminal) {
-  console.log("EDIT")
   let fileName = parseCommand(Terminal.inputBuffer).content[0];
   if (fileName == "" || fileName == undefined) {
     Terminal.appendHistory("string", "ERROR: FILE NOT FOUND", 14);
     return;
   }
 
-  console.log(fileName)
-
   let file = Terminal.Kernel.MemoryChip.GetFile(fileName);
   if (file === undefined) Terminal.Kernel.MemoryChip.CreateFile(fileName, "");
 
-  console.log(file)
   Terminal.Kernel.Load(new Editor(Terminal.Kernel, fileName));
   Terminal.Kernel.lastProgram = Terminal;
 }
+
 
 function Cat(Terminal) {
   let fileName = parseCommand(Terminal.inputBuffer).content[0];
@@ -262,6 +261,10 @@ function parseCommand(command) {
   );
 }
 
+function Load(Terminal) {
+  Terminal.Kernel.MemoryChip.CreateFile("TILES.COP", "FN _START() GO\n\tW = 20\n\tPI = 1\n\tLEWAY = 1\n\tPOSITIONS = [64-W, 64, 64+W]\n\tHELD = FALSE\n\tLIVES = 1\n\tSCORE = 0\n\tSPEED = 50\n\tDT = 1/30\n\tBUFFER = 0\n\tMAX = 20\n\tTICKER = MAX\n\tTILES = []\nEND\n\nFN _UPDATE() GO\n\tIF LIVES <= 0 THEN _START() END\n\n\tIF TICKER <= 0 THEN\n\t\tSPAWN()\n\t\tMAX = MAX - 5*DT\n\t\tIF MAX < 15 THEN MAX = 10 END\n\tEND\n\n\tINPUT()\n\tMOVE()\n\tCOLLIDE()\n\tDRAW()\n\n\tBUFFER = BUFFER + 1\n\tTICKER = TICKER - 1\n\tIF TICKER < 0 THEN TICKER = FLR(MAX) END\nEND\n\nFN COLLIDE() GO\n\tTO_REMOVE = []\n\tFOR I IN RANGE(LEN(TILES)) DO\n\t\tT = TILES[I]\n\t\tIF T[1] >= 123 THEN\n\t\t\tIF T[0] == PI THEN\n\t\t\t\tSCORE = SCORE + 1\n\t\t\t\tTO_REMOVE = PUSH(TO_REMOVE, I)\n\t\t\tELSE \n\t\t\t\tIF T[1] >= 123 AND BUFFER > LEWAY THEN\n\t\t\t\t\tLIVES = LIVES - 1\n\t\t\t\t\tFILL(8)\n\t\t\t\t\tTO_REMOVE = PUSH(TO_REMOVE, I)\n\t\t\t\tELIF T[1] >= 123 AND BUFFER <= LEWAY THEN \n\t\t\t\t\tSCORE = SCORE + 1\n\t\t\t\t\tTO_REMOVE = PUSH(TO_REMOVE, I)\n\t\t\t\tEND\n\t\t\tEND\n\t\tEND\n\tEND\n\n\tT_NEW = []\n\tFOR I IN RANGE(LEN(TILES)) DO\n\t\tIF !CONTAINS(TO_REMOVE, I) THEN\n\t\t\tT_NEW = PUSH(T_NEW, TILES[I])\n\t\tEND\n\tEND\n\n\tTILES = T_NEW\nEND\n\nFN CONTAINS(ARRAY, ELEM) GO\n\tFOR E IN ARRAY DO\n\t\tIF E == ELEM THEN\n\t\t\tRETURN TRUE\n\t\tEND\n\tEND\n\tRETURN FALSE\nEND\n\nFN MOVE() GO\n\tFOR T IN TILES DO\n\t\tT[1] = T[1] + SPEED*DT\n\tEND\nEND\n\nFN SPAWN() GO \n\tTILES = PUSH(TILES, [FLR(RND(3)), 0])\nEND\n\nFN INPUT() GO\n\tIF BTN(\"LEFT\") AND !HELD THEN\n\t\tPI = PI - 1\n\t\tBUFFER = 0\n\tELIF BTN(\"RIGHT\") AND !HELD THEN\n\t\tPI = PI + 1\n\t\tBUFFER = 0\n\tEND\n\t\n\tIF PI < 0 THEN PI = 0 END\n\tIF PI > 2 THEN PI = 2 END\n\t\t\n\tIF BTN(\"LEFT\") OR BTN(\"RIGHT\") THEN\n\t\tHELD = TRUE\n\tELSE\n\t\tHELD = FALSE\n\tEND\n\n\tIF BTN(\"1\") THEN PI = 0 END\n\tIF BTN(\"2\") THEN PI = 1 END\n\tIF BTN(\"3\") THEN PI = 2 END\nEND\n\nFN DRAW() GO\n\tFILL(0)\n\tSET(POSITIONS[PI], 127, 7)\n\tFOR T IN TILES DO\n\t\tRECT(POSITIONS[T[0]]-W/2, T[1], W, 1, 7)\n\tEND\n\n\tX = 0\n\tFOR X IN RANGE(0,128,4) DO\n\t\tRECT(X, 123, 2, 1, 6)\n\tEND\n\n\tTEXT(SCORE, 0, 0, 7)\n\tTEXT(LIVES, 0, 6, 8)\nEND ")
+}
+
 function Welcome(Terminal) {
   return [
     {
@@ -305,4 +308,5 @@ module.exports = {
   Cat,
   Rmdir,
   Delete,
+  Load,
 };

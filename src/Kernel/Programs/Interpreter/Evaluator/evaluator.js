@@ -6,6 +6,7 @@ const {
   Function,
   String,
   Array,
+  Table,
   CreateEnvironment,
   Return,
   Null,
@@ -49,6 +50,9 @@ function Evaluate(node, Environment) {
 
     case TOKENS.INDEX:
       return evalIndex(node, Environment)
+
+    case TOKENS.TABLE:
+      return evalTable(node, Environment)
 
     case TOKENS.NUMBER:
       return [new Number(node.Value), null]
@@ -100,7 +104,7 @@ function evalIndex(arrayNode, Environment) {
   let [left, leftErr] = Evaluate(arrayNode.Left, Environment)
   if (leftErr != null) return [null, leftErr]
 
-  if (left.Type != TOKENS.ARRAY) return [
+  if (![TOKENS.TABLE, TOKENS.ARRAY].includes(left.Type)) return [
     null,
     new Error("LINE " + arrayNode.LineNumber + " CANNOT INDEX TYPE " + left.Type),
   ]
@@ -108,18 +112,59 @@ function evalIndex(arrayNode, Environment) {
   let [index, indexErr] = Evaluate(arrayNode.Index, Environment)
   if (indexErr != null) return [null, indexErr]
 
-  if (index.Type != TOKENS.NUMBER) return [
-    null,
-    new Error("LINE " + arrayNode.LineNumber + " INDEX MUST BE OF TYPE NUMBER, GOT: " + index.Type),
-  ]
+  if (left.Type == TOKENS.ARRAY) {
+    if (index.Type != TOKENS.NUMBER) return [
+      null,
+      new Error("LINE " + arrayNode.LineNumber + " INDEX MUST BE OF TYPE NUMBER, GOT: " + index.Type),
+    ]
 
+    if (index.Value >= left.Elements.length) return [
+      null,
+      new Error("LINE " + arrayNode.LineNumber + " INDEX ERROR: INDEX OUT OF RANGE"),
+    ]
+    
+    return [left.Elements[index.Value], null]
 
-  if (index.Value >= left.Elements.length) return [
-    null,
-    new Error("LINE " + arrayNode.LineNumber + " INDEX ERROR: INDEX OUT OF RANGE"),
-  ]
-  
-  return [left.Elements[index.Value], null]
+  } else {
+    let indexString = ""
+
+    switch (index.Type) {
+      case TOKENS.NUMBER:
+        indexString = index.Value.toString()
+        break
+
+      case TOKENS.STRING:
+        //indexString = index.Value.slice(1,-1)
+        indexString = index.Value
+        break
+
+      case TOKENS.IDENTIFIER:
+        indexString = index.Identifier
+        break
+
+      default:
+        return [
+          null,
+          new Error("LINE " + arrayNode.LineNumber + " INDEX MUST BE OF TYPE NUMBER, IDENTIFIER, STRING, GOT: " + index.Type),
+        ]
+    }
+
+    return [left.Table[indexString], null]
+  }
+
+  return [new Null(), null]
+}
+
+function evalTable(tableNode, Environment) {
+  let table = new Table({})
+  Object.keys(tableNode.Table).forEach(function(key) {
+    let [entry, entryErr] = Evaluate(tableNode.Table[key], Environment)
+    if (entryErr != null) return [null, entryErr]
+
+    table.Table[key] = entry
+  })
+
+  return [table, null]
 }
 
 function evalArray(arrayNode, Environment) {
@@ -294,15 +339,83 @@ function Assign(assignNode, Environment) {
 
       Environment.Global[assignNode.Left.Identifier] = Right
     }
-  } else if (assignNode.Left.Type == TOKENS.INDEX) {
-    let [array, arrayErr] = getArray(assignNode.Left, Environment)
-    if (arrayErr != null) return [null, arrayErr]
-    console.log(array)
 
+  } else if (assignNode.Left.Type == TOKENS.INDEX) {
+    let [left, leftErr] = getArray(assignNode.Left, Environment)
+    if (leftErr != null) return [null, leftErr]
+    
+    if (left.Type == TOKENS.ARRAY) return assignArray(left, assignNode, Right, Environment)  
+    else return assignTable(left, assignNode, Right, Environment)
+  }
+
+  return [new Null(), null]
+}
+
+function assignTable(table, assignNode, Right, Environment) {
+  let [generatedString, generatedErr] = generateTableIndexString("", assignNode.Left, table, Environment) 
+  if (generatedErr != null) return [null, generatedErr]
+
+  let str = "table.Table" + generatedString.slice(0,-6) + " = Right"
+  console.log("STROMG",str)
+  try {
+    eval(str)
+    console.log(table)
+  } catch (e) {
+    if (e instanceof TypeError) return [
+      null,
+      new Error("LINE " + assignNode.LineNumber + " CANNOT ASSIGN TO PROVIDED DEPTH")
+    ]
+    
+    console.log(e)
+  }
+
+  return [table, null]
+}
+
+function generateTableIndexString(str, node, table, Environment) {
+  if (node.Type != TOKENS.INDEX) {
+    return [str, null]
+  }   
+  
+  let [index, indexErr] = Evaluate(node.Index, Environment)
+  if (indexErr != null) return [null, indexErr]
+
+  let indexString = ""
+  switch (index.Type) {
+    case TOKENS.STRING:
+      indexString = index.Value
+      break
+
+    case TOKENS.NUMBER:
+      indexString = index.Value.toString()
+      break
+
+    case TOKENS.IDENTIFIER:
+      indexString = index.Value.Identifier
+      break
+
+    default:
+      return [
+        null,
+        new Error("LINE " + node.LineNumber + " INDEX ERROR, INDEX MUST BE TYPE: NUMBER, STRING OR IDENTIFIER, GOT: " + index.Type)
+      ]
+  }
+
+  if (table.Table[indexString] == undefined) return [
+    null,
+    new Error("LINE " + node.LineNumber + " KEY: " + indexString + " NOT IN DICTIONARY")
+  ]
+
+  if (index.Type == TOKENS.STRING) indexString = '"' + indexString + '"'
+  return generateTableIndexString("[" + indexString + "].Table" + str, node.Left, table, Environment)
+}
+
+function assignArray(array, assignNode, Right, Environment) {
     let [generatedString, generatedErr] = generateIndexString("", assignNode.Left, array, Environment) 
     if (generatedErr != null) return [null, generatedErr]
 
     let str = "array.Elements" + generatedString.slice(0,-9) + " = Right"
+    console.log(str)
     try {
       eval(str)
     } catch (e) {
@@ -310,13 +423,9 @@ function Assign(assignNode, Environment) {
         null,
         new Error("LINE " + assignNode.LineNumber + " CANNOT ASSIGN TO PROVIDED DEPTH")
       ]
-      
     }
 
     return [array, null]
-  }
-
-  return [new Null(), null]
 }
 
 function getArray(node, Environment) {
@@ -345,7 +454,7 @@ function generateIndexString(str, node, array, Environment) {
     new Error("LINE " + node.LineNumber + " INDEX ERROR: INDEX OUT OF RANGE"),
   ]
 
-  return generateIndexString("[" + index.Value + "].Elements" + str, node.Left, Environment)
+  return generateIndexString("[" + index.Value + "].Elements" + str, node.Left, array, Environment)
 }  
 
 // evaluate all sub nodes and return last value
