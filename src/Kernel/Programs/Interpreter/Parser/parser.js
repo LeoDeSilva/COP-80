@@ -363,7 +363,7 @@ class Parser {
         this.advance(true)
         let [elements, elementErr] = this.parseArguments(TOKENS.RSQUARE) 
         if (elementErr != null) return [null, elementErr]
-        if (this.peek().Type == TOKENS.COMMA) this.advance()
+        this.advance(true)
         return this.parsePostfix(new ArrayNode(this.lineNumber, elements))
 
       case TOKENS.LBRACE:
