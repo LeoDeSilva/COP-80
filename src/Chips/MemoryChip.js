@@ -1,6 +1,6 @@
 class Folder {
-  constructor(name, parent) {
-    this.Parent = parent;
+  constructor(name) {
+    //this.Parent = parent;
     this.Type = "folder";
     this.Name = name;
     this.Files = [];
@@ -19,11 +19,75 @@ class File {
 class MemoryChip {
   constructor(Kernel) {
     this.Kernel = Kernel
-    this.BaseDirectory = new Folder("BASE");
-    this.BaseDirectory.Parent = this.BaseDirectory;
+    //this.BaseDirectory.Parent = this.BaseDirectory;
 
+    this.BaseDirectory = new Folder("/");
     this.CurrentDirectory = this.BaseDirectory;
-    this.FilePath = [this.BaseDirectory];
+
+    //this.FilePath = [this.BaseDirectory];
+    this.Path = ["/"]
+  }
+
+  FindDir(directory, name) {
+    for (let i = 0; i < directory.SubDirs.length; i++) {
+      if (directory.SubDirs[i].Name == name) 
+        return true
+    } 
+
+    return false
+  }
+
+  ChangeDirectory(pathString) {
+    let parsedCommand = this.parsePath(pathString)
+    let path = [...this.Path]
+    
+    if (parsedCommand[0] == "/") path = ["/"]
+    for (let i = 0; i < parsedCommand.length; i++) {
+      let dir = parsedCommand[i]
+      if (dir == "..") {
+        if (path.length <= 1) return "CANNOT REGRESS TO DEPTH" 
+        path.pop()
+      } else {
+        path.push(dir)
+      }
+    }
+
+    return this.Goto(path)
+  }
+
+  Goto(path) {
+    let tempPath = ["/"]
+    let currentDir = this.BaseDirectory
+
+    let i = 0;
+    while (path != tempPath && i < path.slice(1).length) {
+      if (!this.FindDir(currentDir, path.slice(1)[i]))
+        return "FOLDER " + path.slice(1)[i] + " NOT FOUND" 
+
+      tempPath.push(path.slice(1)[i])
+      for (let j = 0; j < currentDir.SubDirs.length; j++) {
+        if (currentDir.SubDirs[j].Name == path.slice(1)[i]) {
+          currentDir = currentDir.SubDirs[j]
+        }
+      }
+
+      i++
+    }
+
+    this.Path = tempPath
+    this.CurrentDirectory = currentDir
+    return null
+  }
+
+  parsePath(pathString) {
+    let path = []
+    if (pathString[0] == "/") {
+      pathString = pathString.slice(1)
+      path.push("/")
+    }
+
+    path = path.concat(pathString.split("/"))
+    return path
   }
 
   GetFiles() {
@@ -41,7 +105,7 @@ class MemoryChip {
   }
 
   GetFilePath() {
-    return this.FilePath.map((file) => file.Name).join("/");
+    return "/" + this.Path.slice(1).join("/")
   }
 
   GetFile(dirname) {
@@ -70,11 +134,12 @@ class MemoryChip {
   }
 
   DeleteDirectory(dirName) {
+    //TODO FIX:
     let dir = this.GetDirectory(dirName)
     if (dir === undefined)
       return "DIR NOT FOUND"
 
-    this.CurrentDirectory.SubDirs = this.CurrentDirectory.Files.filter(function(item) {
+    this.CurrentDirectory.SubDirs = this.CurrentDirectory.SubDirs.filter(function(item) {
       return item != dir
     })
     this.Kernel.Save()
@@ -102,7 +167,7 @@ class MemoryChip {
   CreateDirectory(folderName) {
     if (this.GetDirectory(folderName) != undefined) return true;
     this.CurrentDirectory.SubDirs.push(
-      new Folder(folderName, this.CurrentDirectory)
+      new Folder(folderName)
     );
     this.Kernel.Save()
   }

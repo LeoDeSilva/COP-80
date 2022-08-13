@@ -98,22 +98,24 @@ function ChangeDirectory(Terminal) {
   let directory = parseCommand(Terminal.inputBuffer).content[0];
   let err = 0;
 
-  if (directory == null) {
-    err = 1;
-  } else if (directory == "..") {
-    err = Terminal.Kernel.MemoryChip.RegressDirectory();
-  } else {
-    err = Terminal.Kernel.MemoryChip.EnterDirectory(directory);
-  }
+  err = Terminal.Kernel.MemoryChip.ChangeDirectory(directory)
 
-  if (err == 1) {
-    Terminal.appendHistory("string", "SYNTAX ERROR", 14);
+  //if (directory == null) {
+  //  err = 1;
+  //} else if (directory == "..") {
+  //  err = Terminal.Kernel.MemoryChip.RegressDirectory();
+  //} else {
+  //  err = Terminal.Kernel.MemoryChip.EnterDirectory(directory);
+  //}
+
+  if (err != null) {
+    Terminal.appendHistory("string", err, 14);
     return;
   }
 
   Terminal.appendHistory(
     "string",
-    "/" + Terminal.Kernel.MemoryChip.GetFilePath() + "/",
+    Terminal.Kernel.MemoryChip.GetFilePath(),
     12
   );
 }
@@ -130,6 +132,7 @@ function MakeDirectory(Terminal) {
 }
 
 function ListDirectory(Terminal) {
+  console.log(Terminal.Kernel.MemoryChip.CurrentDirectory)
   for ( let i = 0; i < Terminal.Kernel.MemoryChip.CurrentDirectory.SubDirs.length; i++) {
     let content = Terminal.Kernel.MemoryChip.CurrentDirectory.SubDirs[i].Name;
     Terminal.appendHistory("string", content, 14);
@@ -270,7 +273,7 @@ function Load(Terminal) {
       break
     case "SNAKE":
     case "SNAKE.COP":
-      Terminal.Kernel.MemoryChip.CreateFile("SNAKE.COP", "FN _START() GO\n\tX = 16\n\tY = 16\n\tSNAKE = [[X,Y]]\n\tFOOD = [FLR(RND(32)), FLR(RND(32))]\n\tDIR = \"UP\"\n\tGROW = FALSE\n\tDEAD = FALSE\n\tSCORE = 0\n\tMAX = 4\n\tTICKER = MAX\nEND\n\nFN _UPDATE() GO\n\tIF DEAD THEN _START() END\n\tIF SCORE >= 10 THEN MAX = 3\n\tELIF SCORE >= 20 THEN MAX = 2 \n\tELIF SCORE >= 40 THEN MAX = 1 END\n\tINPUT()\n\t\n\tIF TICKER == 0 THEN \n\t\tMOVE()\n\tEND\n\n\tCOLLIDE()\n\n\tDRAW()\n\n\tTICKER = TICKER - 1\n\tIF TICKER < 0 THEN TICKER = MAX END\nEND\n\nFN COLLIDE() GO\n\tIF X == FOOD[0] AND Y == FOOD[1] THEN\n\t\tGROW = TRUE\n\t\tSCORE = SCORE + 1\n\t\tFOOD = [FLR(RND(32)), FLR(RND(32))]\n\tEND\n\n\tFOR I IN RANGE(LEN(SNAKE)-1) DO\n\t\tS = SNAKE[I]\n\t\tIF S[0] == X AND S[1] == Y THEN\n\t\t\tDEAD = TRUE\n\t\tEND\n\tEND\n\n\tIF X >= 32 OR X < 0 THEN\n\t\tDEAD = TRUE\n\tELIF Y >= 32 OR Y < 0 THEN \n\t\tDEAD = TRUE\n\tEND\nEND\n\nFN INPUT() GO\n\tIF BTN(\"LEFT\") THEN \n\t\tDIR = \"LEFT\"\n\tELIF BTN(\"RIGHT\") THEN\n\t\tDIR = \"RIGHT\"\n\tELIF BTN(\"UP\") THEN \n\t\tDIR = \"UP\"\n\tELIF BTN(\"DOWN\") THEN\n\t\tDIR = \"DOWN\"\n\tEND\nEND\n\nFN MOVE() GO\n\tIF DIR == \"UP\" THEN\n\t\tY = Y - 1\n\tELIF DIR == \"DOWN\" THEN\n\t\tY = Y + 1\n\tELIF DIR == \"LEFT\" THEN\n\t\tX = X - 1\n\tELSE \n\t\tX = X + 1 \n\tEND\n\t\n\tSNAKE = PUSH(SNAKE, [X,Y])\n\tIF !GROW THEN\n\t\tSNAKE = REMOVE(SNAKE, 0)\n\tELSE \n\t\tGROW = FALSE\n\tEND\nEND\n\nFN DRAW_SNAKE() GO\n\tFOR P IN SNAKE DO\n\t\tRECT(P[0]*4, P[1]*4, 4, 4, 9)\n\tEND\nEND\n\nFN DRAW() GO\n\tFILL(8)\n\tDRAW_SNAKE()\n\tRECT(FOOD[0]*4, FOOD[1]*4, 4, 4, 9)\n\tTEXT(SCORE, 0, 0, 9)\nEND")
+      Terminal.Kernel.MemoryChip.CreateFile("SNAKE.COP", "FN _START() GO\n\tX = 16\n\tY = 16\n\tSNAKE = [[X,Y]]\n\tFOOD = [FLR(RND(32)), FLR(RND(32))]\n\tDIR = \"UP\"\n\tGROW = FALSE\n\tDEAD = FALSE\n\tSCORE = 0\n\tMAX = 4\n\tTICKER = MAX\nEND\n\nFN _UPDATE() GO\n\tIF DEAD THEN _START() END\n\tIF SCORE >= 10 THEN MAX = 3\n\tELIF SCORE >= 20 THEN MAX = 2 \n\tELIF SCORE >= 40 THEN MAX = 1 END\n\tINPUT()\n\t\n\tIF TICKER == 0 THEN \n\t\tMOVE()\n\tEND\n\n\tCOLLIDE()\n\n\tDRAW()\n\n\tTICKER = TICKER - 1\n\tIF TICKER < 0 THEN TICKER = MAX END\nEND\n\nFN COLLIDE() GO\n\tIF X == FOOD[0] AND Y == FOOD[1] THEN\n\t\tGROW = TRUE\n\t\tSCORE = SCORE + 1\n\t\tFOOD = [FLR(RND(32)), FLR(RND(32))]\n\tEND\n\n\tFOR I IN RANGE(LEN(SNAKE)-1) DO\n\t\tS = SNAKE[I]\n\t\tIF S[0] == X AND S[1] == Y THEN\n\t\t\tDEAD = TRUE\n\t\tEND\n\tEND\n\n\tIF X >= 128 OR X < 0 THEN\n\t\tDEAD = TRUE\n\tELIF Y >= 128 OR Y < 0 THEN \n\t\tDEAD = TRUE\n\tEND\nEND\n\nFN INPUT() GO\n\tIF BTN(\"LEFT\") THEN \n\t\tDIR = \"LEFT\"\n\tELIF BTN(\"RIGHT\") THEN\n\t\tDIR = \"RIGHT\"\n\tELIF BTN(\"UP\") THEN \n\t\tDIR = \"UP\"\n\tELIF BTN(\"DOWN\") THEN\n\t\tDIR = \"DOWN\"\n\tEND\nEND\n\nFN MOVE() GO\n\tIF DIR == \"UP\" THEN\n\t\tY = Y - 1\n\tELIF DIR == \"DOWN\" THEN\n\t\tY = Y + 1\n\tELIF DIR == \"LEFT\" THEN\n\t\tX = X - 1\n\tELSE \n\t\tX = X + 1 \n\tEND\n\t\n\tSNAKE = PUSH(SNAKE, [X,Y])\n\tIF !GROW THEN\n\t\tSNAKE = REMOVE(SNAKE, 0)\n\tELSE \n\t\tGROW = FALSE\n\tEND\nEND\n\nFN DRAW_SNAKE() GO\n\tFOR P IN SNAKE DO\n\t\tRECT(P[0]*4, P[1]*4, 4, 4, 9)\n\tEND\nEND\n\nFN DRAW() GO\n\tFILL(8)\n\tDRAW_SNAKE()\n\tRECT(FOOD[0]*4, FOOD[1]*4, 4, 4, 9)\n\tTEXT(SCORE, 0, 0, 9)\nEND")
       break
     default:
       Terminal.appendHistory("string", "ERROR: FILE NOT FOUND, EXPECTED: PIANO or SNAKE", 14);
