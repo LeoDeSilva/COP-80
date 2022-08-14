@@ -15,6 +15,7 @@ class Interpreter {
   Start() {
     this.Kernel.DisplayChip.FillScreen(0);
 
+    if (!this.Environment.Global["_START"]) return
     if (this.Environment.Global["_START"] || this.Environment.Global["_START"].Type == TOKENS.FUNCTION) {
       let invokeNode = new InvokeNode(0, new IdentifierNode(0, "_START"), [])
         //return [new InvokeNode(this.lineNumber, node, args), null]
@@ -51,6 +52,8 @@ class Interpreter {
       this.error = resultErr.msg
       return
     }
+
+    this.Kernel.KeyboardChip.Update()
   }
 
   Quit() {

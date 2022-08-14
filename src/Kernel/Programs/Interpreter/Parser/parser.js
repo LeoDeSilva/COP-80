@@ -363,7 +363,7 @@ class Parser {
         this.advance(true)
         let [elements, elementErr] = this.parseArguments(TOKENS.RSQUARE) 
         if (elementErr != null) return [null, elementErr]
-        this.advance(true)
+        this.advance()
         return this.parsePostfix(new ArrayNode(this.lineNumber, elements))
 
       case TOKENS.LBRACE:
@@ -429,6 +429,26 @@ class Parser {
 
   parsePostfix(node) {
     switch (this.token.Type) {
+      case TOKENS.DOT:
+        this.advance(true)
+        let [id, idErr] = this.parsePrefix()
+        if (idErr != null) return [null, idErr]
+
+        if (![TOKENS.STRING, TOKENS.IDENTIFIER, TOKENS.NUMBER].includes(id.Type)) return [
+          null,
+          new Error("LINE " + this.lineNumber + " INDEX CAN ONLY BE OF TYPE: NUMBER, STRING OR IDENTIFIER, GOT: " + id.Type)
+        ]
+
+        if (this.token.Type == TOKENS.EQ) {
+          this.advance()
+          let [expr, exprErr] = this.parsePrattExpression(0)
+          if (exprErr != null) return [null, exprErr]
+          return [new AssignNode(this.lineNumber, TOKENS.GLOBAL, new IndexNode(this.lineNumber, node, id), expr), null]
+        }
+
+        return this.parsePostfix(new IndexNode(this.lineNumber, node, id))
+
+
       case TOKENS.LPAREN:
         this.advance(true)
         let [args, argErr] = this.parseArguments(TOKENS.RPAREN) 
@@ -452,6 +472,7 @@ class Parser {
           if (exprErr != null) return [null, exprErr]
           return [new AssignNode(this.lineNumber, TOKENS.GLOBAL, new IndexNode(this.lineNumber, node, index), expr), null]
         }
+
 
         return this.parsePostfix(new IndexNode(this.lineNumber, node, index))
     }

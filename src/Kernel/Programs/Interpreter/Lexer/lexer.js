@@ -209,7 +209,7 @@ class Lexer {
         number, 
         new Error("SYNTAX ERROR, LINE " + this.lineNumber + " > 1 '.' IN NUMBER: " + number)
       ]
-    } else if (number[number.length - 1] == ".") {
+    } else if (number[-1] == ".") {
     // IF LAST NUMBER = '.' -> ERR
       return [
         number, 

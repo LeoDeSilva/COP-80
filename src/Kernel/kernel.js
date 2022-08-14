@@ -52,6 +52,7 @@ class Kernel {
   }
 
   ParseSave() {
+    if (this.Get()[0] == null || this.Get()[1] == null) return
     this.MemoryChip.BaseDirectory.Files = JSON.parse(localStorage.getItem("Files"))
     this.MemoryChip.BaseDirectory.SubDirs = JSON.parse(localStorage.getItem("Dirs"))
 

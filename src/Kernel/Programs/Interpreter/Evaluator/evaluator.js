@@ -1,4 +1,4 @@
-const { TOKENS, Error, Token } = require("../Lexer/tokens");
+const { TOKENS, Error, Token } = require("../Lexer/tokens");eval
 const { PREDEFINED_FUNCTIONS } = require("./predefined.js")
 
 const {
@@ -109,10 +109,10 @@ function evalIndex(arrayNode, Environment) {
     new Error("LINE " + arrayNode.LineNumber + " CANNOT INDEX TYPE " + left.Type),
   ]
   
-  let [index, indexErr] = Evaluate(arrayNode.Index, Environment)
-  if (indexErr != null) return [null, indexErr]
-
   if (left.Type == TOKENS.ARRAY) {
+    let [index, indexErr] = Evaluate(arrayNode.Index, Environment)
+    if (indexErr != null) return [null, indexErr]
+
     if (index.Type != TOKENS.NUMBER) return [
       null,
       new Error("LINE " + arrayNode.LineNumber + " INDEX MUST BE OF TYPE NUMBER, GOT: " + index.Type),
@@ -128,25 +128,27 @@ function evalIndex(arrayNode, Environment) {
   } else {
     let indexString = ""
 
-    switch (index.Type) {
-      case TOKENS.NUMBER:
-        indexString = index.Value.toString()
-        break
+    if (arrayNode.Index.Type == TOKENS.IDENTIFIER) indexString = arrayNode.Index.Identifier
+    else {
+      let [index, indexErr] = Evaluate(arrayNode.Index, Environment)
+      if (indexErr != null) return [null, indexErr]
 
-      case TOKENS.STRING:
-        //indexString = index.Value.slice(1,-1)
-        indexString = index.Value
-        break
+      switch (index.Type) {
+        case TOKENS.NUMBER:
+          indexString = index.Value.toString()
+          break
 
-      case TOKENS.IDENTIFIER:
-        indexString = index.Identifier
-        break
+        case TOKENS.STRING:
+          //indexString = index.Value.slice(1,-1)
+          indexString = index.Value
+          break
 
-      default:
-        return [
-          null,
-          new Error("LINE " + arrayNode.LineNumber + " INDEX MUST BE OF TYPE NUMBER, IDENTIFIER, STRING, GOT: " + index.Type),
-        ]
+        default:
+          return [
+            null,
+            new Error("LINE " + arrayNode.LineNumber + " INDEX MUST BE OF TYPE NUMBER, IDENTIFIER, STRING, GOT: " + index.Type),
+          ]
+      }
     }
 
     return [left.Table[indexString], null]
@@ -356,17 +358,14 @@ function assignTable(table, assignNode, Right, Environment) {
   if (generatedErr != null) return [null, generatedErr]
 
   let str = "table.Table" + generatedString.slice(0,-6) + " = Right"
-  console.log("STROMG",str)
   try {
     eval(str)
-    console.log(table)
   } catch (e) {
     if (e instanceof TypeError) return [
       null,
       new Error("LINE " + assignNode.LineNumber + " CANNOT ASSIGN TO PROVIDED DEPTH")
     ]
     
-    console.log(e)
   }
 
   return [table, null]
@@ -377,37 +376,46 @@ function generateTableIndexString(str, node, table, Environment) {
     return [str, null]
   }   
   
-  let [index, indexErr] = Evaluate(node.Index, Environment)
-  if (indexErr != null) return [null, indexErr]
+  let [index, indexErr] = [null, null]
+  if (node.Index.Type == TOKENS.IDENTIFIER) {
+    indexString = node.Index.Identifier
+    index = node.Index
 
-  let indexString = ""
-  switch (index.Type) {
-    case TOKENS.STRING:
-      indexString = index.Value
-      break
+    if (table.Table[indexString] == undefined) return [
+      null,
+      new Error("LINE " + node.LineNumber + " KEY: " + indexString + " NOT IN DICTIONARY")
+    ]
 
-    case TOKENS.NUMBER:
-      indexString = index.Value.toString()
-      break
+    return generateTableIndexString("." + indexString + ".Table" + str, node.Left, table, Environment)
+  } else {
+    [index, indexErr] = Evaluate(node.Index, Environment)
+    if (indexErr != null) return [null, indexErr]
 
-    case TOKENS.IDENTIFIER:
-      indexString = index.Value.Identifier
-      break
+    let indexString = ""
+    switch (index.Type) {
+      case TOKENS.STRING:
+        indexString = index.Value
+        break
 
-    default:
-      return [
-        null,
-        new Error("LINE " + node.LineNumber + " INDEX ERROR, INDEX MUST BE TYPE: NUMBER, STRING OR IDENTIFIER, GOT: " + index.Type)
-      ]
-  }
+      case TOKENS.NUMBER:
+        indexString = index.Value.toString()
+        break
 
-  if (table.Table[indexString] == undefined) return [
-    null,
-    new Error("LINE " + node.LineNumber + " KEY: " + indexString + " NOT IN DICTIONARY")
-  ]
+      default:
+        return [
+          null,
+          new Error("LINE " + node.LineNumber + " INDEX ERROR, INDEX MUST BE TYPE: NUMBER, STRING OR IDENTIFIER, GOT: " + index.Type)
+        ]
+    }
+    if (table.Table[indexString] == undefined) return [
+      null,
+      new Error("LINE " + node.LineNumber + " KEY: " + indexString + " NOT IN DICTIONARY")
+    ]
 
-  if (index.Type == TOKENS.STRING) indexString = '"' + indexString + '"'
-  return generateTableIndexString("[" + indexString + "].Table" + str, node.Left, table, Environment)
+    if (index.Type == TOKENS.STRING) indexString = '"' + indexString + '"'
+    return generateTableIndexString("[" + indexString + "].Table" + str, node.Left, table, Environment)
+    }
+
 }
 
 function assignArray(array, assignNode, Right, Environment) {
@@ -415,7 +423,6 @@ function assignArray(array, assignNode, Right, Environment) {
     if (generatedErr != null) return [null, generatedErr]
 
     let str = "array.Elements" + generatedString.slice(0,-9) + " = Right"
-    console.log(str)
     try {
       eval(str)
     } catch (e) {
@@ -423,6 +430,7 @@ function assignArray(array, assignNode, Right, Environment) {
         null,
         new Error("LINE " + assignNode.LineNumber + " CANNOT ASSIGN TO PROVIDED DEPTH")
       ]
+      
     }
 
     return [array, null]

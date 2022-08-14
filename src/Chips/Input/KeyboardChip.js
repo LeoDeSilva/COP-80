@@ -2,6 +2,7 @@ class KeyboardChip {
   constructor() {
     // LIST OF ALL KEYS WAITING TO BE HANDLED (compensate for speed difference)
     this.keyBuffer = [];
+    this.lastFrame = {}
     this.pressedKeys = {};
 
     window.addEventListener("keyup", (e) => {
@@ -14,9 +15,28 @@ class KeyboardChip {
     });
   }
 
+  Update() {
+    for (let key in this.pressedKeys) {
+      if (this.isPressed(key)) 
+        this.lastFrame[key] = true
+      else 
+        this.lastFrame[key] = false
+    }
+  }
+ 
   isPressed(key) {
     let pressed = this.pressedKeys[key];
     if (pressed == undefined) pressed = false
+    return pressed ? 1 : 0
+  }
+
+  BtnDown(keyId) {
+    let pressedLastFrame = this.lastFrame[keyId]
+    if (pressedLastFrame == undefined) pressedLastFrame = false
+
+    let pressed = !pressedLastFrame && this.isPressed(keyId)
+    if (pressed == undefined) pressed = false
+
     return pressed ? 1 : 0
   }
 

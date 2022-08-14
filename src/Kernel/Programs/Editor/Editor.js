@@ -88,9 +88,10 @@ class Editor {
   }
 
   syntaxHighlighting() {
-    let [tokX, tokY] = [0, 0]
+    //let [tokX, tokY] = [0, 0]
     let x = this.drawStartX
     let y = this.drawStartY
+    console.log(this.tokens)
 
     for (let i = 0; i < this.tokens.length; i++) {
       if (this.tokens[i] == null || this.tokens[i].Type == TOKENS.EOF) continue
@@ -113,11 +114,12 @@ class Editor {
             colour = 7
       }
 
-      [tokX, tokY] = this.Kernel.FontChip.BlitText(
+      let [tokX, tokY] = this.Kernel.FontChip.BlitText(
         this.Kernel.DisplayChip,
         this.tokens[i].Literal,
         x, y, colour, true
       )
+
 
       x += tokX 
 

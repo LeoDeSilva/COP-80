@@ -51,6 +51,27 @@ function rnd(LineNumber, args, Environment) {
   return [new Number(Math.random() * args[0].Value), null]
 }
 
+function btnp(LineNumber, args, Environment) {
+  if (args.length != 1) return checkLength(LineNumber, "BTN", 1, args)
+  if (args[0].Type != TOKENS.STRING) return checkArgument(LineNumber, "BTN", 0, TOKENS.STRING, args)
+
+  let mappings = {
+    "ENTER": "Enter",
+    "LEFT": "ArrowLeft",
+    "RIGHT": "ArrowRight",
+    "UP": "ArrowUp",
+    "DOWN": "ArrowDown",
+    "BACKSPACE": "Backspace",
+    "SHIFT": "Shift",
+    "TAB": "Tab",
+  }
+
+  let key = args[0].Value.toLowerCase()
+  if (mappings[args[0].Value] != null) key = mappings[args[0].Value]
+
+  return [new Number(Environment.Kernel.KeyboardChip.BtnDown(key)), null]
+}
+ 
 function btn(LineNumber, args, Environment) {
   if (args.length != 1) return checkLength(LineNumber, "BTN", 1, args)
   if (args[0].Type != TOKENS.STRING) return checkArgument(LineNumber, "BTN", 0, TOKENS.STRING, args)
@@ -274,5 +295,6 @@ module.exports = {
     "POP": new Predefined(pop),
     "INSERT": new Predefined(insert),
     "RANGE": new Predefined(range),
+    "BTNP": new Predefined(btnp),
   }
 }
