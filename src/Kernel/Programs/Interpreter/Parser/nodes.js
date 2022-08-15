@@ -52,6 +52,13 @@ class ProgramNode extends Node {
   }
 }
 
+class ImportNode extends Node {
+  constructor(LineNumber, Path) {
+    super(LineNumber, TOKENS.IMPORT)
+    this.Path = Path
+  }
+}
+
 class TableNode extends Node { 
   constructor(LineNumber, Table) {
     super(LineNumber, TOKENS.TABLE) 
@@ -189,4 +196,5 @@ module.exports = {
   WhileNode,
   TableNode,
   ForNode,
+  ImportNode,
 };

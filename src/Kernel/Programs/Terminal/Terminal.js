@@ -124,9 +124,15 @@ class Terminal {
       case "CD":
       case "RMDIR":
         if (this.Kernel.MemoryChip.CurrentDirectory.SubDirs.length < 1) { return }
+
+        if (this.Kernel.MemoryChip.GetDirs()[this.tabCirculateIndex].Name == ".MODULES") 
+          this.tabCirculateIndex++
+
         if (this.Kernel.MemoryChip.CurrentDirectory.SubDirs.length <= this.tabCirculateIndex) { this.tabCirculateIndex = 0 }
         this.inputBuffer = this.inputBuffer.toUpperCase().split(" ")[0] + " " + this.Kernel.MemoryChip.GetDirs()[this.tabCirculateIndex].Name
         this.tabCirculateIndex ++;
+
+        if (this.Kernel.MemoryChip.CurrentDirectory.SubDirs.length <= this.tabCirculateIndex) { this.tabCirculateIndex = 0 }
         break;
     }
   }

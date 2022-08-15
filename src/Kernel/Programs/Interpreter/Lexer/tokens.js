@@ -11,6 +11,7 @@ const KEYWORDS = {
     IN: "IN",
     WHILE: "WHILE",
     FN: "FN",
+    IMPORT: "IMPORT",
 
     END: "END",
     THEN: "THEN",
@@ -77,6 +78,7 @@ module.exports = {
     RETURN: "RETURN",
     IF: "IF",
     ELSE: "ELSE",
+    IMPORT: "IMPORT",
     ELIF: "ELIF",
     FOR: "FOR",
     WHILE: "WHILE",

@@ -91,7 +91,6 @@ class Editor {
     //let [tokX, tokY] = [0, 0]
     let x = this.drawStartX
     let y = this.drawStartY
-    console.log(this.tokens)
 
     for (let i = 0; i < this.tokens.length; i++) {
       if (this.tokens[i] == null || this.tokens[i].Type == TOKENS.EOF) continue

@@ -125,8 +125,22 @@ function print(LineNumber, args, Environment) {
   let [str, strErr] = joinArguments(LineNumber, args)
   if (strErr != null) return [null, strErr]
 
-  Environment.Kernel.loadedProgram.appendHistory("string", str, 6);
+  try {
+    Environment.Kernel.lastProgram.appendHistory("string", str, 6);
+  } catch (error) {
+    Environment.Kernel.loadedProgram.appendHistory("string", str, 6);
+  }
   return [new Null(), null]
+}
+
+function round(LineNumber, args, Environment) {
+  if (args.length != 2) return checkLength(LineNumber, "ROUND", 2, args)  
+  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "ROUND", 0, TOKENS.NUMBER, args)
+  if (args[1].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "ROUND", 1, TOKENS.NUMBER, args)
+
+  //let roundedValue = args[0].Value.toFixed(args[1].Value)
+  let roundedValue = args[0].Value.toFixed(args[1].Value)
+  return [new Number(parseFloat(roundedValue)), null]
 }
 
 function text(LineNumber, args, Environment) {
@@ -296,5 +310,6 @@ module.exports = {
     "INSERT": new Predefined(insert),
     "RANGE": new Predefined(range),
     "BTNP": new Predefined(btnp),
+    "ROUND": new Predefined(round),
   }
 }

@@ -37,16 +37,52 @@ class MemoryChip {
     return false
   }
 
+  FindFile(pathString) {
+    let parsedCommand = this.parsePath(pathString)
+    let fileName = parsedCommand[parsedCommand.length - 1]
+
+    parsedCommand.pop()
+    let parsedPath = parsedCommand
+    let initPath = [...this.Path]
+    let path = [...this.Path]
+
+    if (parsedPath[0] == "/") path = []
+    for (let i = 0; i < parsedPath.length; i++) {
+      let dir = parsedPath[i]
+      if (dir == "..") {
+        if (path.length <= 1) return [null, "CANNOT REGRESS TO DEPTH"] 
+        path.pop()
+      } else if (dir == ".") {
+        continue
+      } else {
+        path.push(dir)
+      }
+    }
+
+    let err = this.Goto(path)
+    if (err != null) return [null, err]
+
+    let file = this.GetFile(fileName)
+    if (file == undefined) return [null, "CANNOT FIND FILE: " + fileName]
+
+    let gotoErr = this.Goto(initPath)
+    if (gotoErr != null) return [null, gotoErr]
+
+    return [file, null]
+  }
+
   ChangeDirectory(pathString) {
     let parsedCommand = this.parsePath(pathString)
     let path = [...this.Path]
     
-    if (parsedCommand[0] == "/") path = ["/"]
+    if (parsedCommand[0] == "/") path = []
     for (let i = 0; i < parsedCommand.length; i++) {
       let dir = parsedCommand[i]
       if (dir == "..") {
         if (path.length <= 1) return "CANNOT REGRESS TO DEPTH" 
         path.pop()
+      } else if (dir == ".") {
+        continue
       } else {
         path.push(dir)
       }

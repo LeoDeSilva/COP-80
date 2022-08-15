@@ -1,6 +1,7 @@
 const { TOKENS, Error, Token } = require("../Lexer/tokens");
 const {
   ProgramNode,
+  ImportNode,
   TableNode,
   IndexNode,
   FunctionNode,
@@ -106,12 +107,37 @@ class Parser {
         this.advance()
         return this.parseFunction()
 
+      case TOKENS.IMPORT:
+        this.advance()
+        return this.parseImport()
+
       case TOKENS.IDENTIFIER:
         if (this.peek().Type != TOKENS.EQ) break;
         return this.parseAssign(TOKENS.GLOBAL)
 
     }
     return this.parsePrattExpression(0); // 10, 10+10
+  }
+
+  parseImport() {
+    let path = ""
+    switch (this.token.Type) {
+      case TOKENS.STRING:
+        path = this.token.Literal.slice(1,-1)
+        break
+
+      case TOKENS.IDENTIFIER:
+        path = this.token.Literal
+        break
+
+      default:
+        return [
+          null,
+          new Error("SYNTAX ERROR LINE " + this.lineNumber + " EXPECTED IDENTIFIER OR STRING AFTER IMPORT STATEMENT")
+        ]
+    }
+
+    return [new ImportNode(this.lineNumber, path), null]
   }
 
   parseReturn() {

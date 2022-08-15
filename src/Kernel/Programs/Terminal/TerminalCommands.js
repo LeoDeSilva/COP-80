@@ -132,8 +132,8 @@ function MakeDirectory(Terminal) {
 }
 
 function ListDirectory(Terminal) {
-  console.log(Terminal.Kernel.MemoryChip.CurrentDirectory)
   for ( let i = 0; i < Terminal.Kernel.MemoryChip.CurrentDirectory.SubDirs.length; i++) {
+    if (Terminal.Kernel.MemoryChip.CurrentDirectory.SubDirs[i].Name == ".MODULES") continue
     let content = Terminal.Kernel.MemoryChip.CurrentDirectory.SubDirs[i].Name;
     Terminal.appendHistory("string", content, 14);
   }

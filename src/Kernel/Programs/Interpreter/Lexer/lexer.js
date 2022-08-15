@@ -222,7 +222,7 @@ class Lexer {
 
   lexIdentifier() {
     let identifier = "";
-    while (LETTERS.includes(this.char)) {
+    while (LETTERS.concat(DIGITS).includes(this.char)) {
       identifier += this.char;
       this.advance();
     }

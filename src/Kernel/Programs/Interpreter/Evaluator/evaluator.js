@@ -1,5 +1,7 @@
 const { TOKENS, Error, Token } = require("../Lexer/tokens");eval
 const { PREDEFINED_FUNCTIONS } = require("./predefined.js")
+const { Lexer } = require("../Lexer/lexer");
+const { Parser } = require("../Parser/parser");
 
 const {
   Number,
@@ -15,6 +17,9 @@ const {
 // recursive evaluation of program
 function Evaluate(node, Environment) {
   switch (node.Type) {
+    case TOKENS.IMPORT:
+      return Import(node, Environment)
+
     case TOKENS.ASSIGN:
       return Assign(node, Environment)
 
@@ -65,6 +70,44 @@ function Evaluate(node, Environment) {
   }
 
   return [null, new Error("EVAL_ERROR LINE " + node.LineNumber + ", TOKEN " + node.Type + " NOT IMPLEMENTED")]
+}
+
+function Import(importNode, Environment) {
+  let fileObj = null
+  if (importNode.Path.split(".").length > 1 && importNode.Path.split(".")[importNode.Path.split(".").length - 1] == "COP") {
+    let initPath = Environment.Kernel.MemoryChip.Path
+    let [file, err] = Environment.Kernel.MemoryChip.FindFile(importNode.Path)
+    if (err != null) return [null, new Error(err)]
+    fileObj = file
+  } else {
+    let parsedPath = Environment.Kernel.MemoryChip.parsePath(importNode.Path)
+    let path = "/.MODULES/" + parsedPath[parsedPath.length - 1] + ".COP"
+    let [file, err] = Environment.Kernel.MemoryChip.FindFile(path)
+    if (err != null) return [null, new Error(err)]
+    fileObj = file
+  }
+
+  let lexer = new Lexer(fileObj.FileData);
+  let [tokens, lexerErr] = lexer.Lex(false);
+  if (lexerErr != null) return [null,new Error(fileObj.FileName + ":" + lexerErr.msg)]
+
+  tokens = tokens.filter(function(tok) {
+    return !(["SPACE", "TAB"].includes(tok.Type))
+  })
+
+  let parser = new Parser(tokens);
+  let [ast, parserErr] = parser.Parse();
+  if (parserErr != null) return [null, new Error(fileObj.FileName + ":" + parserErr.msg)]
+
+  let env = CreateEnvironment(Environment.Kernel)
+  let [result, evaluatorErr] = Evaluate(ast, env)
+  if (evaluatorErr != null) return [null, new Error(fileObj.FileName + ":" + evaluatorErr.msg)]
+
+  for (let key in env.Global) {
+    Environment.Global[key] = env.Global[key]
+  }
+
+  return [new Null(), null]
 }
 
 function For(forNode, Environment) {
