@@ -457,13 +457,25 @@ class Parser {
     switch (this.token.Type) {
       case TOKENS.DOT:
         this.advance(true)
-        let [id, idErr] = this.parsePrefix()
-        if (idErr != null) return [null, idErr]
+        //TODO: REPLACE PARSE PREFIX WITH this.token
+        let id = null
+        console.log(this.token.Type)
+        switch (this.token.Type) {
+          case TOKENS.STRING:
+          case TOKENS.IDENTIFIER:
+          case TOKENS.NUMBER:
+            id = new StringNode(this.lineNumber, this.token.Literal)
+            break
 
-        if (![TOKENS.STRING, TOKENS.IDENTIFIER, TOKENS.NUMBER].includes(id.Type)) return [
-          null,
-          new Error("LINE " + this.lineNumber + " INDEX CAN ONLY BE OF TYPE: NUMBER, STRING OR IDENTIFIER, GOT: " + id.Type)
-        ]
+          default:
+            return [
+              null,
+              new Error("LINE " + this.lineNumber + " INDEX CAN ONLY BE OF TYPE: NUMBER, STRING OR IDENTIFIER, GOT: " + id.Type)
+            ]
+
+        }
+
+        this.advance()
 
         if (this.token.Type == TOKENS.EQ) {
           this.advance()
