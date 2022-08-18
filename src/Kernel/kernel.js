@@ -1,6 +1,7 @@
 const { MemoryChip } = require("../Chips/MemoryChip");
 const { DisplayChip } = require("../Chips/Display/DisplayChip");
 const { KeyboardChip } = require("../Chips/Input/KeyboardChip");
+const { MouseChip } = require("../Chips/Input/MouseChip");
 const { FontChip } = require("../Chips/Display/FontChip");
 const { ErrorChip } = require("../Chips/ErrorChip");
 
@@ -14,13 +15,14 @@ const path = require('path');
 const fs = require('fs');
 
 class Kernel {
-  constructor(screenHeight) {
+  constructor(screenHeight, canvas) {
     this.Icons = ICONS;
 
     this.MemoryChip = new MemoryChip(this);
     this.DisplayChip = new DisplayChip(screenHeight);
     this.KeyboardChip = new KeyboardChip();
     this.FontChip = new FontChip(FONT);
+    this.MouseChip = new MouseChip(this, canvas);
 
     this.loadedProgram = new Terminal(this);
     this.loadedProgram.Start();

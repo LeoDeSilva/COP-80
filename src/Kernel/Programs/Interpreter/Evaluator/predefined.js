@@ -1,4 +1,5 @@
 const { TOKENS, Error } = require("../Lexer/tokens.js")
+const {SpriteChip} = require("../../../../Chips/Display/SpriteChip.js")
 
 const { Predefined, Null, Number, Array} = require("./objects.js");
 
@@ -55,6 +56,7 @@ function btnp(LineNumber, args, Environment) {
   if (args.length != 1) return checkLength(LineNumber, "BTN", 1, args)
   if (args[0].Type != TOKENS.STRING) return checkArgument(LineNumber, "BTN", 0, TOKENS.STRING, args)
 
+
   let mappings = {
     "ENTER": "Enter",
     "LEFT": "ArrowLeft",
@@ -62,6 +64,7 @@ function btnp(LineNumber, args, Environment) {
     "UP": "ArrowUp",
     "DOWN": "ArrowDown",
     "BACKSPACE": "Backspace",
+    "SPACE": " ",
     "SHIFT": "Shift",
     "TAB": "Tab",
   }
@@ -76,6 +79,7 @@ function btn(LineNumber, args, Environment) {
   if (args.length != 1) return checkLength(LineNumber, "BTN", 1, args)
   if (args[0].Type != TOKENS.STRING) return checkArgument(LineNumber, "BTN", 0, TOKENS.STRING, args)
 
+
   let mappings = {
     "ENTER": "Enter",
     "LEFT": "ArrowLeft",
@@ -84,6 +88,7 @@ function btn(LineNumber, args, Environment) {
     "DOWN": "ArrowDown",
     "BACKSPACE": "Backspace",
     "SHIFT": "Shift",
+    "SPACE": " ",
     "TAB": "Tab",
   }
 
@@ -292,6 +297,68 @@ function range(LineNumber, args, Environment) {
   return [new Array(array), null]
 }
 
+function spr(LineNumber, args, Environment) {
+  if (args.length < 3) return checkLength(LineNumber, "SPR", 3, args)  
+  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "SPR", 0, TOKENS.NUMBER, args)
+  if (args[1].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "SPR", 1, TOKENS.NUMBER, args)
+  if (args[2].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "SPR", 2, TOKENS.NUMBER, args)
+
+  if (Environment.Sprites.length < 64) return [
+    null,
+    new Error("LINE: " + LineNumber + " SPRITES NOT LOADED BEFORE SPR() IS CALLED")
+  ]
+  
+  if (args[0].Value >= Environment.Sprites.length) return [
+    null,
+    new Error("LINE " + LineNumber + " SPRITE INDEX > 64, GOT: " + args[0].Value)
+  ] 
+
+  let sprite = [...Environment.Sprites[args[0].Value]]
+
+  if (args.length >= 4) {
+    if (args[3].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "SPR", 3, TOKENS.NUMBER, args)
+    if (args[3].Value == 1) {
+      let index = 0;
+      for (let y = 0; y < 8; y++) {
+        let max = 8
+        for (let x = 0; x < 4; x++) {
+          let oppColour = sprite[index + max - 1]
+          sprite[index + max - 1] = sprite[index]
+          sprite[index] = oppColour
+          max -= 2
+          index ++
+        }
+        index += 4
+      }
+    }
+  } 
+
+  if (args.length == 5) {
+    if (args[4].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "SPR", 4, TOKENS.NUMBER, args)
+    if (args[4].Value == 1) {
+      let x = 0
+      let y = 0
+      max = 8
+      for (let i = 0; i < 32; i++) {
+        let oppColour = sprite[(y+max-1)*8 + x]
+        sprite[(y+max-1)*8 + x] = sprite[i]
+        sprite[i] = oppColour
+        x++
+        if (x >= 8) {
+          x = 0
+          y ++
+          max -= 2
+        }
+      }
+    }
+  }
+
+  let spriteChip = new SpriteChip(sprite, 8, 8)
+  spriteChip.Blit(Environment.Kernel.DisplayChip, Math.floor(args[1].Value), Math.floor(args[2].Value))
+
+  return [new Null(), null]
+}
+
 module.exports = {
   PREDEFINED_FUNCTIONS: {
     "LEN": new Predefined(len),
@@ -308,8 +375,8 @@ module.exports = {
     "REMOVE": new Predefined(remove),
     "POP": new Predefined(pop),
     "INSERT": new Predefined(insert),
-    "RANGE": new Predefined(range),
     "BTNP": new Predefined(btnp),
     "ROUND": new Predefined(round),
+    "SPR": new Predefined(spr),
   }
 }

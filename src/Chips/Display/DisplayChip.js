@@ -14,7 +14,14 @@ class DisplayChip {
     return y * this.PIXEL_DENSITY + x;
   }
 
-  Rect(x, y, width, height, colour_code) {
+  Rect(x, y, width, height, colour_code, hollow=false) {
+    if (hollow) {
+      for (let xpos = x; xpos <= x + (width); xpos++) { this.setPixel(xpos, y, colour_code); }
+      for (let xpos = x; xpos <= x + (width); xpos++) { this.setPixel(xpos, y+height, colour_code); }
+      for (let ypos = y; ypos <= y + (height); ypos++) { this.setPixel(x, ypos, colour_code); }
+      for (let ypos = y; ypos <= y + (height); ypos++) { this.setPixel(x+width, ypos, colour_code); }
+      return
+    }
     // ROW (x to x + width)
     for (let ypos = y; ypos <= y + (height - 1); ypos++) {
       for (let xpos = x; xpos <= x + (width - 1); xpos++) {
@@ -31,6 +38,7 @@ class DisplayChip {
 
   setPixel(x, y, colour_code) {
     if (x >= this.PIXEL_DENSITY || y >= this.PIXEL_DENSITY) return;
+    if (x < 0 || y < 0) return;
     this.pixelData[this.toIndex(x, y)] = colour_code; // CHANGE VALUE AT MEMORY ADDRESS TO COLOUR_CODE
   }
 

@@ -2,7 +2,7 @@ const { Kernel } = require("./Kernel/kernel");
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-let kernel = new Kernel(window.innerHeight);
+let kernel = new Kernel(window.innerHeight, canvas);
 
 function resize() {
   kernel.DisplayChip.PIXEL_SIZE = Math.floor(

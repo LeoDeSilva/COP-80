@@ -13,6 +13,7 @@ class Environment {
       DT: new Number(1/30),
     }
     this.Local = {}
+    this.Sprites = []
     this.Kernel = Kernel
   }
 }

@@ -13,6 +13,7 @@ class File {
     this.Type = "file";
     this.Name = name;
     this.FileData = fileData;
+    this.MetaData = {}
   }
 }
 

@@ -459,7 +459,6 @@ class Parser {
         this.advance(true)
         //TODO: REPLACE PARSE PREFIX WITH this.token
         let id = null
-        console.log(this.token.Type)
         switch (this.token.Type) {
           case TOKENS.STRING:
           case TOKENS.IDENTIFIER:

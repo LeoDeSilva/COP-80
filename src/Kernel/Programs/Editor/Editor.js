@@ -1,4 +1,5 @@
  const {Lexer} = require("../Interpreter/Lexer/lexer.js")
+const {Sprite} = require("../Sprite/Sprite.js")
 const {TOKENS, KEYWORDS} = require("../Interpreter/Lexer/tokens.js")
 const {PREDEFINED_FUNCTIONS} = require("../Interpreter/Evaluator/predefined.js")
 
@@ -31,9 +32,29 @@ class Editor {
   }
 
   Start() {
-    let lexer = new Lexer(this.fileData)
-    let [tokens, err] = lexer.Lex(true)
-    this.tokens = tokens
+    if (this.fileName.split(".").length > 1 && this.fileName.split(".")[this.fileName.split(".").length - 1] == "SPR") {
+      this.Kernel.MouseChip.clickBuffer = []
+
+      let sprites = this.Kernel.MemoryChip.GetFile(this.fileName).MetaData["Sprites"]  
+      if (sprites == undefined || sprites == []) {
+        sprites = []
+        for (let i = 0; i < 64; i++) {
+          let sprite = []
+          for (let j = 0; j < 64; j++) {
+            sprite.push(-1)
+          }
+          sprites.push(sprite)
+        }
+      }
+
+      //new Array(64).fill(new Array(64).fill(-1))
+      this.Kernel.loadedProgram = new Sprite(this.Kernel, this.fileName, sprites)
+      this.Kernel.loadedProgram.Start()
+    } else {
+      let lexer = new Lexer(this.fileData)
+      let [tokens, err] = lexer.Lex(true)
+      this.tokens = tokens
+    }
   }
 
   Update() {

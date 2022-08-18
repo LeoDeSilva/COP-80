@@ -79,7 +79,15 @@ function Import(importNode, Environment) {
     let [file, err] = Environment.Kernel.MemoryChip.FindFile(importNode.Path)
     if (err != null) return [null, new Error(err)]
     fileObj = file
-  } else {
+
+  } else if (importNode.Path.split(".").length > 1 && importNode.Path.split(".")[importNode.Path.split(".").length - 1] == "SPR") {
+    let initPath = Environment.Kernel.MemoryChip.Path
+    let [file, err] = Environment.Kernel.MemoryChip.FindFile(importNode.Path)
+    if (err != null) return [null, new Error(err)]
+    Environment.Sprites = file.MetaData.Sprites 
+    return [new Null(), null]
+
+  }else {
     let parsedPath = Environment.Kernel.MemoryChip.parsePath(importNode.Path)
     let path = "/.MODULES/" + parsedPath[parsedPath.length - 1] + ".COP"
     let [file, err] = Environment.Kernel.MemoryChip.FindFile(path)
@@ -194,6 +202,7 @@ function evalIndex(arrayNode, Environment) {
       }
     }
 
+
     return [left.Table[indexString], null]
   }
 
@@ -250,6 +259,7 @@ function Invoke(invokeNode, Environment) {
 function extendEnvironment(wrapper, args, func) {
   let enclosed = CreateEnvironment(wrapper.Kernel)
   enclosed.Global = wrapper.Global
+  enclosed.Sprites = wrapper.Sprites
 
   if (args.length > func.Parameters.length) {
     return [
@@ -360,10 +370,13 @@ function Identifier(identifierNode, Environment) {
     value = Environment.Global[identifierNode.Identifier]
 
   } else {
-    err = new Error(
-      "LINE " + identifierNode.LineNumber 
-      + ", NO VARIABLE EXISTS WITH NAME: " + identifierNode.Identifier
-    )
+    return[
+      null, 
+      new Error(
+        "LINE " + identifierNode.LineNumber 
+        + ", NO VARIABLE EXISTS WITH NAME: " + identifierNode.Identifier
+      )
+    ]
   }
 
   return [value, err]
@@ -389,12 +402,7 @@ function Assign(assignNode, Environment) {
     let [_, string, stringErr] = generateString(assignNode.Left, Environment)
     if (stringErr != null) return [null, stringErr]
     let [left, leftErr] = getArray(assignNode.Left, Environment)
-    //if (leftErr != null) return [null, leftErr]
-    
-   // if (left.Type == TOKENS.ARRAY) return assignArray(left, assignNode, Right, Environment)  
-    //else return assignTable(left, assignNode, Right, Environment)
     let str = "left" + string + " = Right"
-    //console.log(str, left)
 
     try {
       eval(str)
@@ -406,7 +414,6 @@ function Assign(assignNode, Environment) {
       
     }
     
-    console.log(left)
     return [left, null]
   }
 
@@ -419,56 +426,50 @@ function generateString(node, Environment) {
     if (leftErr != null) return [null, null, leftErr]
 
     if (left.Type == TOKENS.ARRAY) {
-      let [index, indexErr] = Evaluate(node.Index, Environment)
-      if (indexErr != null) return [null, null, indexErr]
+      let [elem, tableStr, tableErr] = handleArray(node, left, Environment) 
+      if (tableErr != null) return [null, null, tableErr] 
+      return [elem, str + tableStr, null]
 
-      if (index.Type != TOKENS.NUMBER) return [
-        null,
-        null,
-        new Error("LINE " + node.LineNumber + " INDEX ERROR, INDEX MUST BE TYPE: NUMBER, GOT: " + index.Type)
-      ]
-
-      if (index.Value >= left.Elements.length) return [
-        null,
-        null,
-        new Error("LINE " + node.LineNumber + " INDEX ERROR: INDEX OUT OF RANGE"),
-      ]
-
-      return [left.Elements[index.Value], ".Elements[" + index.Value.toString() + "]", null]
     } else {
-      //TODO: INITIAL TABLE
       let [elem, tableStr, tableErr] = handleTable(node, left, Environment) 
       if (tableErr != null) return [null, null, tableErr] 
       return [elem, tableStr, null]
     }
-    return [null, null, ""]
   }
 
   let [elements, str] = generateString(node.Left, Environment)
+
   if (elements.Type == TOKENS.TABLE) {
     let [elem, tableStr, tableErr] = handleTable(node, elements, Environment) 
     if (tableErr != null) return [null, null, tableErr] 
     return [elem, str + tableStr, null]
+
   } else {
-    let [index, indexErr] = Evaluate(node.Index, Environment)
-    if (indexErr != null) return [null, null, indexErr]
-
-    if (index.Type != TOKENS.NUMBER) return [
-      null,
-      null,
-      new Error("LINE " + node.LineNumber + " INDEX ERROR, INDEX MUST BE TYPE: NUMBER, GOT: " + index.Type)
-    ]
-
-    if (index.Value >= elements.Elements.length) return [
-      null,
-      null,
-      new Error("LINE " + node.LineNumber + " INDEX ERROR: INDEX OUT OF RANGE"),
-    ]
-
-    return [elements.Elements[index.Value], ".Elements[" + index.Value.toString() + "]", null]
+    let [elem, tableStr, tableErr] = handleArray(node, elements, Environment) 
+    if (tableErr != null) return [null, null, tableErr] 
+    return [elem, str + tableStr, null]
   }
 
   return [null, null, ""]
+}
+
+function handleArray(node, array, Environment) {
+  let [index, indexErr] = Evaluate(node.Index, Environment)
+  if (indexErr != null) return [null, null, indexErr]
+
+  if (index.Type != TOKENS.NUMBER) return [
+    null,
+    null,
+    new Error("LINE " + node.LineNumber + " INDEX ERROR, INDEX MUST BE TYPE: NUMBER, GOT: " + index.Type)
+  ]
+
+  if (index.Value >= array.Elements.length) return [
+    null,
+    null,
+    new Error("LINE " + node.LineNumber + " INDEX ERROR: INDEX OUT OF RANGE"),
+  ]
+
+  return [array.Elements[index.Value], ".Elements[" + index.Value.toString() + "]", null]
 }
 
 function handleTable(node, table, Environment) {
@@ -476,12 +477,6 @@ function handleTable(node, table, Environment) {
   if (node.Index.Type == TOKENS.IDENTIFIER) {
     indexString = node.Index.Identifier
     index = node.Index
-
-    if (table.Table[indexString] == undefined) return [
-      null,
-      null,
-      new Error("LINE " + node.LineNumber + " KEY: " + indexString + " NOT IN DICTIONARY")
-    ]
 
     return [table.Table[indexString], ".Table." + indexString, null]
     //return generateTableIndexString("." + indexString + ".Table" + str, node.Left, table, Environment)
@@ -506,11 +501,6 @@ function handleTable(node, table, Environment) {
           new Error("LINE " + node.LineNumber + " INDEX ERROR, INDEX MUST BE TYPE: NUMBER, STRING OR IDENTIFIER, GOT: " + key.Type)
         ]
     }
-    if (table.Table[indexString] == undefined) return [
-      null,
-      null,
-      new Error("LINE " + node.LineNumber + " KEY: " + indexString + " NOT IN DICTIONARY")
-    ]
 
     //if (key.Type == TOKENS.STRING) indexString = '"' + indexString + '"'
     //console.log(table.Table, table.Table[indexString], indexString)
@@ -519,90 +509,6 @@ function handleTable(node, table, Environment) {
     }
 
 }
-function assignTable(table, assignNode, Right, Environment) {
-  let [generatedString, generatedErr] = generateTableIndexString("", assignNode.Left, table, Environment) 
-  if (generatedErr != null) return [null, generatedErr]
-
-  let str = "table.Table" + generatedString.slice(0,-6) + " = Right"
-  try {
-    eval(str)
-  } catch (e) {
-    if (e instanceof TypeError) return [
-      null,
-      new Error("LINE " + assignNode.LineNumber + " CANNOT ASSIGN TO PROVIDED DEPTH")
-    ]
-    
-  }
-
-  return [table, null]
-}
-
-function generateTableIndexString(str, node, table, Environment) {
-  if (node.Type != TOKENS.INDEX) {
-    return [str, null]
-  }   
-  
-  let [index, indexErr] = [null, null]
-  if (node.Index.Type == TOKENS.IDENTIFIER) {
-    indexString = node.Index.Identifier
-    index = node.Index
-
-    //if (table.Table[indexString] == undefined) return [
-     // null,
-     // new Error("LINE " + node.LineNumber + " KEY: " + indexString + " NOT IN DICTIONARY")
-    //]
-
-    return generateTableIndexString("." + indexString + ".Table" + str, node.Left, table, Environment)
-  } else {
-    [index, indexErr] = Evaluate(node.Index, Environment)
-    if (indexErr != null) return [null, indexErr]
-
-    let indexString = ""
-    switch (index.Type) {
-      case TOKENS.STRING:
-        indexString = index.Value
-        break
-
-      case TOKENS.NUMBER:
-        indexString = index.Value.toString()
-        break
-
-      default:
-        return [
-          null,
-          new Error("LINE " + node.LineNumber + " INDEX ERROR, INDEX MUST BE TYPE: NUMBER, STRING OR IDENTIFIER, GOT: " + index.Type)
-        ]
-    }
-    //if (table.Table[indexString] == undefined) return [
-     // null,
-     // new Error("LINE " + node.LineNumber + " KEY: " + indexString + " NOT IN DICTIONARY")
-   // ]
-
-    if (index.Type == TOKENS.STRING) indexString = '"' + indexString + '"'
-    return generateTableIndexString("[" + indexString + "].Table" + str, node.Left, table, Environment)
-    }
-
-}
-
-function assignArray(array, assignNode, Right, Environment) {
-    let [generatedString, generatedErr] = generateIndexString("", assignNode.Left, array, Environment) 
-    if (generatedErr != null) return [null, generatedErr]
-    //let [generatedString, err] = generateString(assignNode.Left, base, Environment)
-
-    let str = "array.Elements" + generatedString.slice(0,-9) + " = Right"
-    try {
-      eval(str)
-    } catch (e) {
-      if (e instanceof TypeError) return [
-        null,
-        new Error("LINE " + assignNode.LineNumber + " CANNOT ASSIGN TO PROVIDED DEPTH")
-      ]
-      
-    }
-
-    return [array, null]
-}
-
 function getArray(node, Environment) {
   if (node.Type == TOKENS.INDEX)  {
     return getArray(node.Left, Environment)
@@ -611,26 +517,6 @@ function getArray(node, Environment) {
   return Evaluate(node, Environment)
 }
 
-function generateIndexString(str, node, array, Environment) { 
-  if (node.Type != TOKENS.INDEX) {
-    return [str, null]
-  }   
-  
-  let [index, indexErr] = Evaluate(node.Index, Environment)
-  if (indexErr != null) return [null, indexErr]
-
-  if (index.Type != TOKENS.NUMBER) return [
-    null,
-    new Error("LINE " + node.LineNumber + " INDEX ERROR, INDEX MUST BE TYPE: NUMBER, GOT: " + index.Type)
-  ]
-
-  if (index.Value >= array.Elements.length) return [
-    null,
-    new Error("LINE " + node.LineNumber + " INDEX ERROR: INDEX OUT OF RANGE"),
-  ]
-
-  return generateIndexString("[" + index.Value + "].Elements" + str, node.Left, array, Environment)
-}  
 
 // evaluate all sub nodes and return last value
 function Program(programNode, Environment) {
