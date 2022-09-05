@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Lato:wght@300;400;700&family=Nunito+Sans:wght@300;400;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Nunito Sans', sans-serif;
+}
+
+.container {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+.navbar {
+    width: 35ch;
+    border-right: 2px solid black;
+    height: 100%;
+}
+
+.navlist {
+    padding: 20px;
+}
+
+.active { 
+    font-weight: 800;
+}
+
+.docs {
+    margin-top: 50px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.content {
+    width: 500px;
+}
+
+.btn:hover {
+    cursor: pointer;
+}
+
+.contents-title-container {
+    width: 100%;
+    height: 75px;
+    background-color: #FFD952;
+    border-bottom: 2px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+h1 {
+    font-family: 'Poppins', sans-serif;
+    margin-bottom: 0px;
+}
+
+.divider {
+    background-color: 2px solid black;
+    border-bottom: 2px solid black;
+    height: 2px;
+    width: 365px;
+}
+
+.code {
+    font-family: 'Fira Code', monospace;
+    width: 100%;
+    border: 2px solid black;
+    padding: 15px;
+    white-space: pre;
+    box-shadow: 4px 4px 0px black;
+}
