@@ -36,19 +36,39 @@ class Editor {
       this.Kernel.MouseChip.clickBuffer = []
 
       let sprites = this.Kernel.MemoryChip.GetFile(this.fileName).MetaData["Sprites"]  
+      let map = this.Kernel.MemoryChip.GetFile(this.fileName).MetaData["Map"]
       if (sprites == undefined || sprites == []) {
         sprites = []
         for (let i = 0; i < 64; i++) {
-          let sprite = []
+          let sprite = {
+            sprite: [],
+            flags: []
+          }
+
           for (let j = 0; j < 64; j++) {
-            sprite.push(-1)
+            sprite.sprite.push(-1)
+          }
+
+          for (let j = 0; j < 8; j++) {
+            sprite.flags.push(0)
           }
           sprites.push(sprite)
         }
       }
 
+      if (map == undefined || map == []) {
+        map = []
+        for (let i = 0; i < 128; i++) {
+          let row = []
+          for (let j = 0; j < 128; j++) {
+            row.push(-1)
+          }
+          map.push(row)
+        }
+      }
+
       //new Array(64).fill(new Array(64).fill(-1))
-      this.Kernel.loadedProgram = new Sprite(this.Kernel, this.fileName, sprites)
+      this.Kernel.loadedProgram = new Sprite(this.Kernel, this.fileName, sprites, map)
       this.Kernel.loadedProgram.Start()
     } else {
       let lexer = new Lexer(this.fileData)

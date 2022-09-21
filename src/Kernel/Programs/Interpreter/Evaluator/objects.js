@@ -11,9 +11,12 @@ class Environment {
       TRUE: new Number(1),
       FALSE: new Number(0),
       DT: new Number(1/30),
+      TIME: new Number(0),
     }
     this.Local = {}
     this.Sprites = []
+    this.Camera = {x:0, y:0}
+    this.Map = []
     this.Kernel = Kernel
   }
 }

@@ -84,7 +84,8 @@ function Import(importNode, Environment) {
     let initPath = Environment.Kernel.MemoryChip.Path
     let [file, err] = Environment.Kernel.MemoryChip.FindFile(importNode.Path)
     if (err != null) return [null, new Error(err)]
-    Environment.Sprites = file.MetaData.Sprites 
+    Environment.Sprites = file.MetaData.Sprites
+    Environment.Map = JSON.parse(JSON.stringify(file.MetaData.Map));
     return [new Null(), null]
 
   }else {
@@ -260,16 +261,18 @@ function extendEnvironment(wrapper, args, func) {
   let enclosed = CreateEnvironment(wrapper.Kernel)
   enclosed.Global = wrapper.Global
   enclosed.Sprites = wrapper.Sprites
+  enclosed.Map = wrapper.Map
+  enclosed.Camera = wrapper.Camera
 
   if (args.length > func.Parameters.length) {
     return [
       null,
-      new Error("LINE " + func.LineNumber + " SUPPLIED ARGS TO FUNCTION: " + func.Identifier.Identifier + " GREATER THAN " + func.Parameters.length)
+      new Error("LINE " + func.LineNumber + " SUPPLIED ARGS TO FUNCTION GREATER THAN " + func.Parameters.length)
     ]
   } else if (args.length < func.Parameters.length) {
     return [
       null,
-      new Error("LINE " + func.LineNumber + " SUPPLIED ARGS TO FUNCTION: " + func.Identifier.Identifier + " LESS THAN " + func.Parameters.length)
+      new Error("LINE " + func.LineNumber + " SUPPLIED ARGS TO FUNCTION LESS THAN " + func.Parameters.length)
     ]
   }
 
@@ -428,7 +431,7 @@ function generateString(node, Environment) {
     if (left.Type == TOKENS.ARRAY) {
       let [elem, tableStr, tableErr] = handleArray(node, left, Environment) 
       if (tableErr != null) return [null, null, tableErr] 
-      return [elem, str + tableStr, null]
+      return [elem, tableStr, null]
 
     } else {
       let [elem, tableStr, tableErr] = handleTable(node, left, Environment) 

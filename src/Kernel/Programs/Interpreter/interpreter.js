@@ -44,6 +44,7 @@ class Interpreter {
       this.Quit()
     }
 
+    this.Environment.Global["TIME"].Value++
     let invokeNode = new InvokeNode(0, new IdentifierNode(0, "_UPDATE"), [])
       //return [new InvokeNode(this.lineNumber, node, args), null]
     //let [result, resultErr] = Evaluate(this.Environment.Global["_UPDATE"], this.Environment)

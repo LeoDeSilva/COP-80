@@ -38,6 +38,13 @@ function flr(LineNumber, args, Environment) {
   return [new Number(Math.floor(args[0].Value)), null]
 }
 
+function sqrt(LineNumber, args, Environment) {
+  if (args.length != 1) return checkLength(LineNumber, "SQRT", 1, args)
+  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "SQRT", 0, TOKENS.NUMBER, args)
+
+  return [new Number(Math.sqrt(args[0].Value)), null]
+}
+
 function abs(LineNumber, args, Environment) {
   if (args.length != 1) return checkLength(LineNumber, "ABS", 1, args)
   if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "ABS", 0, TOKENS.NUMBER, args)
@@ -181,7 +188,7 @@ function rect(LineNumber, args, Environment) {
     new Error("LINE " + LineNumber + " COLOUR CODE GREATER THAN 16, GOT: " + args[4].Value)
   ]
 
-  Environment.Kernel.DisplayChip.Rect(Math.floor(args[0].Value), Math.floor(args[1].Value), Math.floor(args[2].Value), Math.floor(args[3].Value), args[4].Value) 
+  Environment.Kernel.DisplayChip.Rect(Math.floor(args[0].Value-Environment.Camera.x), Math.floor(args[1].Value-Environment.Camera.y), Math.floor(args[2].Value), Math.floor(args[3].Value), args[4].Value) 
   return [new Null(), null]
 }
 
@@ -197,7 +204,7 @@ function set(LineNumber, args, Environment) {
     new Error("LINE " + LineNumber + " COLOUR CODE GREATER THAN 16, GOT: " + args[2].Value)
   ]
    
-  Environment.Kernel.DisplayChip.setPixel(Math.floor(args[0].Value), Math.floor(args[1].Value), args[2].Value)
+  Environment.Kernel.DisplayChip.setPixel(Math.floor(args[0].Value-Environment.Camera.x), Math.floor(args[1].Value-Environment.Camera.y), args[2].Value)
   return [new Null(), null]
 }
 
@@ -313,7 +320,7 @@ function spr(LineNumber, args, Environment) {
     new Error("LINE " + LineNumber + " SPRITE INDEX > 64, GOT: " + args[0].Value)
   ] 
 
-  let sprite = [...Environment.Sprites[args[0].Value]]
+  let sprite = [...Environment.Sprites[args[0].Value].sprite]
 
   if (args.length >= 4) {
     if (args[3].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "SPR", 3, TOKENS.NUMBER, args)
@@ -354,8 +361,123 @@ function spr(LineNumber, args, Environment) {
   }
 
   let spriteChip = new SpriteChip(sprite, 8, 8)
-  spriteChip.Blit(Environment.Kernel.DisplayChip, Math.floor(args[1].Value), Math.floor(args[2].Value))
+  spriteChip.Blit(Environment.Kernel.DisplayChip, Math.floor(args[1].Value-Environment.Camera.x), Math.floor(args[2].Value-Environment.Camera.y))
 
+  return [new Null(), null]
+}
+
+function map(LineNumber, args, Environment) {
+  if (args.length < 2) return checkLength(LineNumber, "MAP", 2, args)  
+  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "MAP", 0, TOKENS.NUMBER, args)
+  if (args[1].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "MAP", 1, TOKENS.NUMBER, args)
+
+  if (Environment.Map == []) return [
+    null,
+    new Error("LINE: " + LineNumber + " SPRITES NOT LOADED BEFORE MAP() IS CALLED")
+  ]
+
+  let xStart = Math.floor(args[0].Value - Environment.Camera.x)
+  let yStart = Math.floor(args[1].Value - Environment.Camera.y)
+
+  let yIndexStart =0
+  let xIndexStart =0
+
+  if (args[0].Value < 0) {
+    xIndexStart = 0
+    xStart = 0
+  }
+
+  if (args[1].Value < 0) {
+    yIndexStart = 0
+    yStart = 0
+  }
+
+  let x = xStart
+  let y = yStart
+
+  let yIndex = yIndexStart
+  while (yIndex < yIndexStart + 128) {
+    let xIndex = xIndexStart
+    while (xIndex < yIndexStart + 128) {
+      if (Environment.Map[yIndex][xIndex] != -1) {
+        let sprite = new SpriteChip(Environment.Sprites[Environment.Map[yIndex][xIndex]].sprite, 8, 8) 
+        sprite.Blit(Environment.Kernel.DisplayChip, x, y)
+      }
+      xIndex++
+      x += 8
+    }
+    y += 8
+    x = xStart
+    yIndex++
+  }
+
+  //Environment.Camera.x = args[0].Value
+  //Environment.Camera.y = args[1].Value
+
+  return [new Null(), null]
+}
+
+function mget(LineNumber, args, Environment) {
+  if (args.length < 2) return checkLength(LineNumber, "MGET", 2, args)  
+  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "MGET", 0, TOKENS.NUMBER, args)
+  if (args[1].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "MGET", 1, TOKENS.NUMBER, args)
+
+  if (Environment.Map == []) return [
+    null,
+    new Error("LINE: " + LineNumber + " SPRITES NOT LOADED BEFORE MGET() IS CALLED")
+  ]
+
+  let xIndex = Math.floor((args[0].Value)/8) 
+  let yIndex = Math.floor((args[1].Value)/8) 
+
+  return [new Number(Environment.Map[yIndex][xIndex]), null]
+}
+
+function mset(LineNumber, args, Environment) {
+  if (args.length < 3) return checkLength(LineNumber, "MSET", 2, args)  
+  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "MSET", 0, TOKENS.NUMBER, args)
+  if (args[1].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "MSET", 1, TOKENS.NUMBER, args)
+  if (args[2].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "MSET", 2, TOKENS.NUMBER, args)
+
+  if (Environment.Map == []) return [
+    null,
+    new Error("LINE: " + LineNumber + " SPRITES NOT LOADED BEFORE MSET() IS CALLED")
+  ]
+
+  let xIndex = Math.floor((args[0].Value)/8) 
+  let yIndex = Math.floor((args[1].Value)/8) 
+  Environment.Map[yIndex][xIndex] = args[2].Value
+  return [new Null(), null]
+
+}
+
+function fget(LineNumber, args, Environment) {
+  if (args.length < 2) return checkLength(LineNumber, "FGET", 2, args)  
+  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "FGET", 0, TOKENS.NUMBER, args)
+  if (args[1].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "FGET", 1, TOKENS.NUMBER, args)
+
+  if (args[1].Value > 7) return [
+    null,
+    new Error("LINE " + LineNumber + " FLAG INDEX CANNOT EXCEED 7, GOT: " + args[2].Value.toString())
+  ]
+
+  if (Environment.Map == []) return [
+    null,
+    new Error("LINE: " + LineNumber + " SPRITES NOT LOADED BEFORE MGET() IS CALLED")
+  ]
+
+  if (args[0].Value == -1) return [new Number(0), null]
+
+  return [new Number(Environment.Sprites[args[0].Value].flags[args[1].Value]), null]
+}
+
+function Camera(LineNumber, args, Environment) {
+  if (args.length < 2) return checkLength(LineNumber, "FGET", 2, args)  
+  if (args[0].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "FGET", 0, TOKENS.NUMBER, args)
+  if (args[1].Type != TOKENS.NUMBER) return checkArgument(LineNumber, "FGET", 1, TOKENS.NUMBER, args)
+
+  Environment.Camera.x = args[0].Value
+  Environment.Camera.y = args[1].Value
   return [new Null(), null]
 }
 
@@ -378,5 +500,12 @@ module.exports = {
     "BTNP": new Predefined(btnp),
     "ROUND": new Predefined(round),
     "SPR": new Predefined(spr),
+    "MAP": new Predefined(map),
+    "MGET": new Predefined(mget),
+    "FGET": new Predefined(fget),
+    "RANGE": new Predefined(range),
+    "CAMERA": new Predefined(Camera),
+    "MSET": new Predefined(mset),
+    "SQRT": new Predefined(sqrt),
   }
 }
