@@ -8,7 +8,9 @@ class DisplayChip {
     this.PALLETE = PALLETE;
 
     this.pixelData = Array(this.PIXEL_DENSITY ** 2).fill(0);
-    this.pixelBuffer = []
+    this.modifiedPixels = []
+    this.pixelMap = {}
+    this.buffer = [...this.pixelData];
   }
 
   toIndex(x, y) {
@@ -39,8 +41,9 @@ class DisplayChip {
   FillScreen(colour_code) {
     for (let i = 0; i < this.RESOLUTION; i++) {
       if (this.pixelData[i] != colour_code) {
-        this.pixelData[i] = colour_code;
-        this.pixelBuffer.push([i, colour_code])
+        //this.pixelData[i] = colour_code;
+        //this.modifiedPixels.push([i, colour_code])
+        this.pixelMap[i] = colour_code;
       }
     }
   }
@@ -50,8 +53,9 @@ class DisplayChip {
     if (x < 0 || y < 0) return;
     let index = this.toIndex(x,y)
     if (this.pixelData[index] != colour_code) {
-      this.pixelData[index] = colour_code; 
-      this.pixelBuffer.push([index, colour_code])
+      //this.pixelData[index] = colour_code; 
+      //this.modifiedPixels.push([index, colour_code])
+        this.pixelMap[i] = colour_code;
     }
   }
 
@@ -71,14 +75,20 @@ class DisplayChip {
     //  }
     //}
     //
-    console.log(this.pixelBuffer.length)
-    for (let i = 0; i < this.pixelBuffer.length; i++) {
-      let [x,y] = this.toCoords(this.pixelBuffer[i][0]);
-      this.drawPixel(x, y, this.PALLETE[this.pixelBuffer[i][1]]);
-      this.pixelData[this.pixelBuffer[i][0]] = this.pixelBuffer[i][1]
-    }
+    Object.keys(pixelMap).forEach(function(i, index) {
+     let [x,y] = this.toCoords(i);
+     this.drawPixel(x, y, this.PALLETE[this.pixelMap[i]]);
+     this.pixelData[i] = this.pixelMap[i]
+    });
+    //console.log(this.modifiedPixels.length)
+    //for (let i = 0; i < this.modifiedPixels.length; i++) {
+    //  let [x,y] = this.toCoords(this.modifiedPixels[i][0]);
+    //  this.drawPixel(x, y, this.PALLETE[this.modifiedPixels[i][1]]);
+    //  this.pixelData[this.modifiedPixels[i][0]] = this.modifiedPixels[i][1]
+    //}
 
-    this.pixelBuffer = [];
+    this.modifiedPixels = [];
+    this.pixelMap = {};
   }
 
   drawPixel(x, y, colour) {
