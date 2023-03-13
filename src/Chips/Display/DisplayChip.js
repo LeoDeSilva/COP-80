@@ -72,6 +72,8 @@ class DisplayChip {
     //}
     //
     console.log(this.pixelBuffer.length)
+
+    //TODO: LOOP BACKWARDS AND IGNORE ANY DUPLICATE INDICIES
     for (let i = 0; i < this.pixelBuffer.length; i++) {
       let [x,y] = this.toCoords(this.pixelBuffer[i][0]);
       this.drawPixel(x, y, this.PALLETE[this.pixelBuffer[i][1]]);
