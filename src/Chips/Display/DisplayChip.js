@@ -8,10 +8,17 @@ class DisplayChip {
     this.PALLETE = PALLETE;
 
     this.pixelData = Array(this.PIXEL_DENSITY ** 2).fill(0);
+    this.modifiedPixels = []
+    this.buffer = [...this.pixelData];
   }
 
   toIndex(x, y) {
     return y * this.PIXEL_DENSITY + x;
+  }
+
+  toCoords(i) {
+    let x = i % 128;
+    return [x, (i-x)/this.PIXEL_DENSITY];
   }
 
   Rect(x, y, width, height, colour_code, hollow=false) {
@@ -32,30 +39,44 @@ class DisplayChip {
 
   FillScreen(colour_code) {
     for (let i = 0; i < this.RESOLUTION; i++) {
-      this.pixelData[i] = colour_code;
+      if (this.pixelData[i] != colour_code) {
+        this.pixelData[i] = colour_code;
+        this.modifiedPixels.push([i, colour_code])
+      }
     }
   }
 
   setPixel(x, y, colour_code) {
     if (x >= this.PIXEL_DENSITY || y >= this.PIXEL_DENSITY) return;
     if (x < 0 || y < 0) return;
-    this.pixelData[this.toIndex(x, y)] = colour_code; // CHANGE VALUE AT MEMORY ADDRESS TO COLOUR_CODE
+    let index = this.toIndex(x,y)
+    if (this.pixelData[index] != colour_code) {
+      this.pixelData[index] = colour_code; 
+      this.modifiedPixels.push([index, colour_code])
+    }
   }
 
   Draw() {
-    let x = 0;
-    let y = 0;
+    //let x = 0;
+    //let y = 0;
 
-    for (let i = 0; i < this.RESOLUTION; i++) {
-      let colour_code = this.pixelData[i];
-      this.drawPixel(x, y, this.PALLETE[colour_code]);
+    //for (let i = 0; i < this.RESOLUTION; i++) {
+    //  let colour_code = this.pixelData[i];
+    //  if(this.pixelData[i] != this.buffer[i])
+    //    this.drawPixel(x, y, this.PALLETE[colour_code]);
 
-      x++;
-      if (x >= this.PIXEL_DENSITY) {
-        x = 0;
-        y++;
-      }
+    //  x++;
+    //  if (x >= this.PIXEL_DENSITY) {
+    //    x = 0;
+    //    y++;
+    //  }
+    //}
+    for (let i = 0; i < this.modifiedPixels.length; i++) {
+      let [x,y] = this.toCoords(this.modifiedPixels[i][0]);
+      this.drawPixel(x, y, this.PALLETE[this.modifiedPixels[i][1]]);
     }
+
+    this.modifiedPixels = [];
   }
 
   drawPixel(x, y, colour) {

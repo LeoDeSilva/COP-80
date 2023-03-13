@@ -86,8 +86,10 @@ class Terminal {
     if (this.startTimeout > 0) {
       for (let i = 0; i < this.Kernel.DisplayChip.RESOLUTION; i += 2) {
         // IF WITHIN CHANCE THEN DRWA PIXEL WITH RANDOM COLOUR AT EVERY OTHER INDEX ( banding effect )
-        if (Math.random() < this.startChance)
-          this.Kernel.DisplayChip.pixelData[i] = Math.floor(Math.random() * 16);
+        if (Math.random() < this.startChance) {
+          let [x,y] = this.Kernel.DisplayChip.toCoords(i);
+          this.Kernel.DisplayChip.setPixel(x, y, Math.floor(Math.random() * 16));
+        }
       }
 
       this.startTimeout--;
